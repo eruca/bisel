@@ -20,6 +20,7 @@ func HandlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig 
 		c.Parameters = &pc
 
 		c.Executor.actions = make([]Action, 0, len(handlers)+1)
+		c.Results = make([]fmt.Stringer, 0, len(handlers)+1)
 		c.AddActions(handlers...)
 		c.AddActions(func(c *Context) fmt.Stringer {
 			pairs, err := pc.CURD(c.DB, tabler)

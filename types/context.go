@@ -32,7 +32,6 @@ func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request) *Con
 func (c *Context) AddActions(actions ...Action) {
 	//! +1的目的是为后面加入的action预留位置
 	c.Executor.actions = append(c.Executor.actions, actions...)
-	c.Results = make([]fmt.Stringer, 0, len(c.Executor.actions)+1)
 }
 
 func (c *Context) Next() {
