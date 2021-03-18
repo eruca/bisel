@@ -37,11 +37,12 @@ func New(db *types.DB, cacher types.Cacher, tablers ...types.Tabler) *Manager {
 
 // TakeAction 可以并发执行
 //! Notice: 因为写入都是在初始化阶段，读取可以并发
-func (manager *Manager) TakeAction(clientWriter io.Writer, req *types.Request, httpReq *http.Request) (err error) {
+func (manager *Manager) TakeAction(clientWriter io.Writer, req *types.Request, httpReq *http.Request,
+	responseType types.ConfigResponseType) (err error) {
 	var respReader io.Reader
 
 	if handler, ok := manager.handlers[req.Type]; ok {
-		ctx := types.NewContext(manager.DB, manager.Cacher, req, httpReq)
+		ctx := types.NewContext(manager.DB, manager.Cacher, req, httpReq, responseType)
 		handler(ctx)
 		ctx.Start()
 
@@ -51,7 +52,7 @@ func (manager *Manager) TakeAction(clientWriter io.Writer, req *types.Request, h
 		respReader = types.ResponderToReader(ctx.Responder)
 		log.Printf("各个handler结果:\t%v\n", ctx.Results)
 	} else {
-		resp := types.BuildErrorResposeFromRequest(req, fmt.Errorf("%q router not implemented yet", req.Type))
+		resp := types.BuildErrorResposeFromRequest(responseType, req, fmt.Errorf("%q router not implemented yet", req.Type))
 		respReader = types.ResponderToReader(resp)
 	}
 	_, err = io.Copy(clientWriter, respReader)

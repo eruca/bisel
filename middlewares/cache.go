@@ -46,7 +46,7 @@ func UseCache(c *types.Context) fmt.Stringer {
 	// 如果缓存有数据，就直接返回给客户端了
 	// 那么后面的actions都不执行了，如果有想要执行的action必须在缓存之前
 	//! 查询了缓存后，不需要把Hash再一次给客户端，原来的Hash值还是有效的, 也不需要给数据，因为客户端有了
-	c.Responder = types.BuildFromRequest(c.Request, true)
+	c.Responder = types.BuildFromRequest(c.ConfigResponseType, c.Request, true)
 	return bytes.NewBufferString("response without payload")
 }
 

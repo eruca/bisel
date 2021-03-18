@@ -13,7 +13,11 @@ var (
 	_ Responder = (*Response)(nil)
 )
 
-func responseType(reqType string, successed bool) string {
+// ConfigResponseType 让使用者可以定制返回的Type结果
+type ConfigResponseType func(string, bool) string
+
+// 否则默认使用responseType作为ConfigResponseType
+func defaultResponseType(reqType string, successed bool) string {
 	if successed {
 		return reqType + "_success"
 	}
@@ -86,7 +90,7 @@ type Response struct {
 }
 
 // BuildFromRequest 从req，success构建
-func BuildFromRequest(req *Request, success bool) *Response {
+func BuildFromRequest(responseType ConfigResponseType, req *Request, success bool) *Response {
 	return &Response{
 		Type: responseType(req.Type, success),
 		UUID: req.UUID,
@@ -94,7 +98,7 @@ func BuildFromRequest(req *Request, success bool) *Response {
 }
 
 // 如果发生错误就直接生产错误的Response
-func BuildErrorResposeFromRequest(req *Request, err error) *Response {
+func BuildErrorResposeFromRequest(responseType ConfigResponseType, req *Request, err error) *Response {
 	return &Response{
 		Type:    responseType(req.Type, false),
 		UUID:    req.UUID,
