@@ -27,15 +27,8 @@ type Context struct {
 	ConfigResponseType
 }
 
-func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request,
-	configResponseType ConfigResponseType) (ctx *Context) {
-	ctx = &Context{DB: db, Cacher: cacher, Request: req, HttpReq: httpReq}
-	// 如果未设置，使用默认的
-	if configResponseType == nil {
-		ctx.ConfigResponseType = defaultResponseType
-	}
-
-	return
+func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType) (ctx *Context) {
+	return &Context{DB: db, Cacher: cacher, Request: req, HttpReq: httpReq,ConfigResponseType: cft}
 }
 
 func (c *Context) AddActions(actions ...Action) {

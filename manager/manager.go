@@ -10,26 +10,34 @@ import (
 )
 
 type Manager struct {
-	*types.DB
-	types.Cacher
-	tablers  []types.Tabler
-	handlers map[string]types.ContextConfig
+	db                 *types.DB
+	cacher             types.Cacher
+	tablers            []types.Tabler
+	handlers           map[string]types.ContextConfig
+	configResponseType types.ConfigResponseType
 }
 
 // New ...
-func New(db *types.DB, cacher types.Cacher, tablers ...types.Tabler) *Manager {
+func New(db *types.DB, cacher types.Cacher,
+	configResponseType types.ConfigResponseType, tablers ...types.Tabler) *Manager {
+
 	handlers := make(map[string]types.ContextConfig)
 	for _, tabler := range tablers {
 		tabler.MustAutoMigrate(db)
 		// Register实际上是让tabler自己注册数据到handlers上
 		tabler.Register(handlers)
 	}
+	// 如果未设置，使用默认的
+	if configResponseType == nil {
+		configResponseType = types.DefaultResponseType
+	}
 
 	manager := &Manager{
-		DB:       db,
-		Cacher:   cacher,
-		tablers:  tablers,
-		handlers: handlers,
+		db:                 db,
+		cacher:             cacher,
+		tablers:            tablers,
+		handlers:           handlers,
+		configResponseType: configResponseType,
 	}
 
 	return manager
@@ -37,12 +45,11 @@ func New(db *types.DB, cacher types.Cacher, tablers ...types.Tabler) *Manager {
 
 // TakeAction 可以并发执行
 //! Notice: 因为写入都是在初始化阶段，读取可以并发
-func (manager *Manager) TakeAction(clientWriter io.Writer, req *types.Request, httpReq *http.Request,
-	responseType types.ConfigResponseType) (err error) {
+func (manager *Manager) TakeAction(clientWriter io.Writer, req *types.Request, httpReq *http.Request) (err error) {
 	var respReader io.Reader
 
 	if handler, ok := manager.handlers[req.Type]; ok {
-		ctx := types.NewContext(manager.DB, manager.Cacher, req, httpReq, responseType)
+		ctx := types.NewContext(manager.db, manager.cacher, req, httpReq, manager.configResponseType)
 		handler(ctx)
 		ctx.Start()
 
@@ -52,7 +59,7 @@ func (manager *Manager) TakeAction(clientWriter io.Writer, req *types.Request, h
 		respReader = types.ResponderToReader(ctx.Responder)
 		log.Printf("各个handler结果:\t%v\n", ctx.Results)
 	} else {
-		resp := types.BuildErrorResposeFromRequest(responseType, req, fmt.Errorf("%q router not implemented yet", req.Type))
+		resp := types.BuildErrorResposeFromRequest(manager.configResponseType, req, fmt.Errorf("%q router not implemented yet", req.Type))
 		respReader = types.ResponderToReader(resp)
 	}
 	_, err = io.Copy(clientWriter, respReader)

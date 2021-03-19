@@ -17,7 +17,7 @@ var (
 type ConfigResponseType func(string, bool) string
 
 // 否则默认使用responseType作为ConfigResponseType
-func defaultResponseType(reqType string, successed bool) string {
+func DefaultResponseType(reqType string, successed bool) string {
 	if successed {
 		return reqType + "_success"
 	}

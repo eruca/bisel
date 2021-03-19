@@ -38,7 +38,7 @@ func main() {
 	db = db.Debug()
 
 	// Manager
-	manager := manager.New(&types.DB{Gorm: db}, types.NewCacher(), &journal.Journal{})
+	manager := manager.New(&types.DB{Gorm: db}, types.NewCacher(), nil, &journal.Journal{})
 
 	router := gin.Default()
 	router.Use(cors())
@@ -50,7 +50,7 @@ func main() {
 		req := types.FromHttpRequest(router, c.Request.Body)
 		log.Printf("http request from client: %-v\n", req)
 
-		manager.TakeAction(c.Writer, req, c.Request, nil)
+		manager.TakeAction(c.Writer, req, c.Request)
 	})
 
 	// 构建读入信息后的处理函数
@@ -58,7 +58,7 @@ func main() {
 		return func(send chan<- []byte, msg []byte) {
 			req := types.NewRequest(bytes.TrimSpace(msg))
 			log.Printf("websocket request from client: %-v\n", req)
-			manager.TakeAction(types.NewChanWriter(send), req, httpReq, nil)
+			manager.TakeAction(types.NewChanWriter(send), req, httpReq)
 		}
 	}
 	// 连接成功后马上发送的数据
