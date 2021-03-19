@@ -117,7 +117,7 @@ func (resp *Response) AddHash(value string) {
 // Add payload field
 func (resp *Response) Add(pairs ...Pair) {
 	if resp.Payload == nil {
-		resp.Payload = map[string]interface{}{}
+		resp.Payload = make(map[string]interface{}, len(pairs))
 	}
 	for _, pair := range pairs {
 		resp.Payload[pair.Key] = pair.Value
