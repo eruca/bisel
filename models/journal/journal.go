@@ -7,41 +7,41 @@ import (
 	"log"
 	"strings"
 
+	"github.com/eruca/bisel/btypes"
 	"github.com/eruca/bisel/middlewares"
-	"github.com/eruca/bisel/types"
 	"gorm.io/gorm"
 )
 
 var (
-	_         types.Tabler = (*Journal)(nil)
-	tableName              = "journals"
+	_         btypes.Tabler = (*Journal)(nil)
+	tableName               = "journals"
 )
 
 type Journal struct {
-	types.GormModel
-	Name        string           `json:"name,omitempty"`
-	Url         string           `json:"url,omitempty"`
-	Description types.NullString `json:"description,omitempty"`
+	btypes.GormModel
+	Name        string            `json:"name,omitempty"`
+	Url         string            `json:"url,omitempty"`
+	Description btypes.NullString `json:"description,omitempty"`
 }
 
-func (j *Journal) New() types.Tabler {
+func (j *Journal) New() btypes.Tabler {
 	return &Journal{}
 }
 
-func (j *Journal) Model() *types.GormModel {
+func (j *Journal) Model() *btypes.GormModel {
 	return &j.GormModel
 }
 
-func (j *Journal) Register(handlers map[string]types.ContextConfig) {
+func (j *Journal) Register(handlers map[string]btypes.ContextConfig) {
 	// 这里的j实际上是Manager.New时传入的对象
 	// 这个对象应该一直都是空值，只是作为调用
-	handlers[tableName+"/query"] = types.HandlerFunc(j, types.ParamQuery,
+	handlers[tableName+"/query"] = btypes.HandlerFunc(j, btypes.ParamQuery,
 		middlewares.TimeElapsed, middlewares.UseCache)
-	handlers[tableName+"/upsert"] = types.HandlerFunc(j, types.ParamUpsert, middlewares.TimeElapsed)
-	handlers[tableName+"/delete"] = types.HandlerFunc(j, types.ParamDelete, middlewares.TimeElapsed)
+	handlers[tableName+"/upsert"] = btypes.HandlerFunc(j, btypes.ParamUpsert, middlewares.TimeElapsed)
+	handlers[tableName+"/delete"] = btypes.HandlerFunc(j, btypes.ParamDelete, middlewares.TimeElapsed)
 }
 
-func (j *Journal) MustAutoMigrate(db *types.DB) {
+func (j *Journal) MustAutoMigrate(db *btypes.DB) {
 	err := db.Gorm.AutoMigrate(j)
 	if err != nil {
 		panic(err)
@@ -50,7 +50,7 @@ func (j *Journal) MustAutoMigrate(db *types.DB) {
 
 func (j *Journal) TableName() string { return tableName }
 
-func (j *Journal) Upsert(db *types.DB, pc *types.ParamsContext) (pairs types.Pairs, err error) {
+func (j *Journal) Upsert(db *btypes.DB, pc *btypes.ParamsContext) (pairs btypes.Pairs, err error) {
 	var inserted bool
 	inserted, err = pc.Tabler.Model().Upsert(db, pc.Tabler)
 	if err != nil {
@@ -69,7 +69,7 @@ func (j *Journal) Upsert(db *types.DB, pc *types.ParamsContext) (pairs types.Pai
 // @params: 代表查询的参数
 // return string: 代表该返回在Payload里的key
 // return interface{}: 代表该返回key对应的结果
-func (j *Journal) Query(db *types.DB, pc *types.ParamsContext) (pairs types.Pairs, err error) {
+func (j *Journal) Query(db *btypes.DB, pc *btypes.ParamsContext) (pairs btypes.Pairs, err error) {
 	var total int64
 	var list []*Journal
 
@@ -102,7 +102,7 @@ func (j *Journal) Query(db *types.DB, pc *types.ParamsContext) (pairs types.Pair
 	return
 }
 
-func (j *Journal) Delete(db *types.DB, pc *types.ParamsContext) (pairs types.Pairs, err error) {
+func (j *Journal) Delete(db *btypes.DB, pc *btypes.ParamsContext) (pairs btypes.Pairs, err error) {
 	log.Printf("delete %#v", pc.Tabler)
 	var n int64
 	n, err = pc.Tabler.Model().SoftDelete(db, pc.Tabler)
@@ -117,6 +117,6 @@ func (j *Journal) Dispose(err error) (bool, error) {
 	return false, err
 }
 
-func (j *Journal) FromRequest(rw json.RawMessage) types.Tabler {
-	return types.FromRequestPayload(rw, j)
+func (j *Journal) FromRequest(rw json.RawMessage) btypes.Tabler {
+	return btypes.FromRequestPayload(rw, j)
 }

@@ -4,9 +4,9 @@ import (
 	"flag"
 	"log"
 
+	"github.com/eruca/bisel/btypes"
 	"github.com/eruca/bisel/manager"
 	"github.com/eruca/bisel/models/journal"
-	"github.com/eruca/bisel/types"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -34,7 +34,7 @@ func main() {
 	db = db.Debug()
 
 	// Manager
-	manager := manager.New(db, types.NewCacher(), nil, &journal.Journal{})
+	manager := manager.New(db, btypes.NewCacher(), nil, &journal.Journal{})
 	// 配置gin
 	engine := gin.Default()
 	engine.Use(cors())

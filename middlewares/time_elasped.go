@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/eruca/bisel/types"
+	"github.com/eruca/bisel/btypes"
 )
 
-func TimeElapsed(c *types.Context) fmt.Stringer {
+func TimeElapsed(c *btypes.Context) fmt.Stringer {
 	now := time.Now()
 	c.Next()
 	duration := time.Since(now)

@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/eruca/bisel/types"
+	"github.com/eruca/bisel/btypes"
 )
 
-func UseCache(c *types.Context) fmt.Stringer {
-	if c.Parameters.ParamType != types.ParamQuery || c.Cacher == nil {
+func UseCache(c *btypes.Context) fmt.Stringer {
+	if c.Parameters.ParamType != btypes.ParamQuery || c.Cacher == nil {
 		c.Next()
 		return nil
 	}
@@ -26,7 +26,7 @@ func UseCache(c *types.Context) fmt.Stringer {
 		cacheKey := params.BuildCacheKey()
 		value, ok := c.Cacher.Get(cacheKey)
 		if ok {
-			c.Responder = types.NewRawBytes(value)
+			c.Responder = btypes.NewRawBytes(value)
 			return bytes.NewBuffer(value)
 		} else {
 			noExistCache(c, params)
@@ -46,11 +46,11 @@ func UseCache(c *types.Context) fmt.Stringer {
 	// 如果缓存有数据，就直接返回给客户端了
 	// 那么后面的actions都不执行了，如果有想要执行的action必须在缓存之前
 	//! 查询了缓存后，不需要把Hash再一次给客户端，原来的Hash值还是有效的, 也不需要给数据，因为客户端有了
-	c.Responder = types.BuildFromRequest(c.ConfigResponseType, c.Request, true)
+	c.Responder = btypes.BuildFromRequest(c.ConfigResponseType, c.Request, true)
 	return bytes.NewBufferString("response without payload")
 }
 
-func noExistCache(c *types.Context, params *types.QueryParams) {
+func noExistCache(c *btypes.Context, params *btypes.QueryParams) {
 	// 先进行后面的操作，返回的时候应该已经有Response了
 	// 就可以对其进行缓存
 	c.Next()

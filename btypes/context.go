@@ -1,4 +1,4 @@
-package types
+package btypes
 
 import (
 	"fmt"
@@ -28,7 +28,7 @@ type Context struct {
 }
 
 func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType) (ctx *Context) {
-	return &Context{DB: db, Cacher: cacher, Request: req, HttpReq: httpReq,ConfigResponseType: cft}
+	return &Context{DB: db, Cacher: cacher, Request: req, HttpReq: httpReq, ConfigResponseType: cft}
 }
 
 func (c *Context) AddActions(actions ...Action) {
