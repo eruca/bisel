@@ -2,14 +2,11 @@ package journal
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/eruca/bisel/btypes"
 	"github.com/eruca/bisel/middlewares"
-	"gorm.io/gorm"
 )
 
 var (
@@ -77,25 +74,7 @@ func (j *Journal) Query(db *btypes.DB, pc *btypes.ParamsContext) (pairs btypes.P
 		panic("参数不能为空")
 	}
 
-	tx := db.Gorm.Begin()
-	defer tx.Commit()
-
-	tx = tx.Table(tableName)
-
-	if pc.QueryParams.Conds == nil {
-		// todo 还需对Conds重新设计
-		tx = tx.Where(strings.Join(pc.QueryParams.Conds, ""))
-	}
-	// TODO: 所有total需根据是否是硬删除，如果是软删除，必须将deleted_at IS NULL
-	if err := tx.Order(pc.QueryParams.Orderby).
-		Offset(int(pc.QueryParams.Offset)).
-		Limit(int(pc.QueryParams.Size)).
-		Find(&list).Count(&total).Error; err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			tx.Rollback()
-			panic(err)
-		}
-	}
+	btypes.QueryAssist(db.Gorm, j, pc, &total, &list)
 	pairs.Add("total", total)
 	pairs.Add(tableName, list)
 

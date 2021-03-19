@@ -3,6 +3,10 @@ package btypes
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"strings"
+
+	"gorm.io/gorm"
 )
 
 type NullString struct {
@@ -30,4 +34,26 @@ func (ns *NullString) UnmarshalJSON(data []byte) error {
 		ns.Valid = false
 	}
 	return nil
+}
+
+func QueryAssist(db *gorm.DB, tabler Tabler, pc *ParamsContext, total *int64, list interface{}) {
+	tx := db.Begin()
+	defer tx.Commit()
+
+	tableName := tabler.TableName()
+	tx = tx.Table(tableName)
+
+	if len(pc.QueryParams.Conds) > 0 {
+		// todo 还需对Conds重新设计
+		tx = tx.Where(strings.Join(pc.QueryParams.Conds, ""))
+	}
+	tx.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE deleted_at IS NULL", tableName)).Scan(total)
+
+	if err := tx.Where("1 = 1").Order(pc.QueryParams.Orderby).
+		Offset(int(pc.QueryParams.Offset)).
+		Limit(int(pc.QueryParams.Size)).
+		Find(list); err != nil {
+		tx.Rollback()
+		panic(err)
+	}
 }
