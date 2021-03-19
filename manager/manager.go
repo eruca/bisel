@@ -18,9 +18,10 @@ type Manager struct {
 }
 
 // New ...
-func New(db *types.DB, cacher types.Cacher,
-	configResponseType types.ConfigResponseType, tablers ...types.Tabler) *Manager {
+func New(gdb *gorm.DB, cacher types.Cacher, configResponseType types.ConfigResponseType,
+	tablers ...types.Tabler) *Manager {
 
+	db := &types.DB{Gorm: gdb}
 	handlers := make(map[string]types.ContextConfig)
 	for _, tabler := range tablers {
 		tabler.MustAutoMigrate(db)

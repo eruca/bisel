@@ -38,7 +38,7 @@ func main() {
 	db = db.Debug()
 
 	// Manager
-	manager := manager.New(&types.DB{Gorm: db}, types.NewCacher(), nil, &journal.Journal{})
+	manager := manager.New(db, types.NewCacher(), nil, &journal.Journal{})
 
 	router := gin.Default()
 	router.Use(cors())
