@@ -23,7 +23,7 @@ func UseCache(c *btypes.Context) fmt.Stringer {
 
 	// 发送过来的请求没有Hash
 	if params.Hash == "" {
-		cacheKey := params.BuildCacheKey()
+		cacheKey := params.BuildCacheKey(c.Request)
 		value, ok := c.Cacher.Get(cacheKey)
 		if ok {
 			c.Responder = btypes.NewRawBytes(value)
@@ -58,7 +58,7 @@ func noExistCache(c *btypes.Context, params *btypes.QueryParams) {
 		panic("这个时候应该有对客户端的回应了，可是没有")
 	}
 	// key是按照查询参数MD5计算出俩的hash值
-	key := params.BuildCacheKey()
+	key := params.BuildCacheKey(c.Request)
 	// 设置缓存
 	c.Cacher.Set(c.Tabler.TableName(), key, c.Responder.JSON())
 	// 给返回的结果增加Hash值，下次请求带上这个哈希值，就可以使用缓存了
