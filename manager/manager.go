@@ -1,12 +1,16 @@
 package manager
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 
+	"github.com/eruca/bisel/net/ws"
 	"github.com/eruca/bisel/types"
+	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Manager struct {
@@ -15,6 +19,40 @@ type Manager struct {
 	tablers            []types.Tabler
 	handlers           map[string]types.ContextConfig
 	configResponseType types.ConfigResponseType
+}
+
+// InitSystem 分别启动http,websocket
+// 返回可以启动链式操作StartTask
+func (manager *Manager) InitSystem(engine *gin.Engine) *Manager {
+	engine.POST("/:table/:acid", func(c *gin.Context) {
+		table := c.Param("table")
+		acid := c.Param("acid")
+		router := fmt.Sprintf("%s/%s", table, acid)
+		req := types.FromHttpRequest(router, c.Request.Body)
+		log.Printf("http request from client: %-v\n", req)
+
+		manager.TakeAction(c.Writer, req, c.Request)
+	})
+
+	// 构建读入信息后的处理函数
+	processMixHttpRequest := func(httpReq *http.Request) ws.Process {
+		return func(send chan<- []byte, msg []byte) {
+			req := types.NewRequest(bytes.TrimSpace(msg))
+			log.Printf("websocket request from client: %-v\n", req)
+			manager.TakeAction(types.NewChanWriter(send), req, httpReq)
+		}
+	}
+	// 连接成功后马上发送的数据
+	connected := func(send chan<- []byte) {
+		log.Println("Connected now, will send some data to client")
+		manager.Connected(send)
+	}
+	wsHandler := ws.WebsocketHandler(processMixHttpRequest, connected)
+	engine.GET("/ws", func(c *gin.Context) {
+		wsHandler(c.Writer, c.Request)
+	})
+
+	return manager
 }
 
 // New ...
@@ -44,7 +82,7 @@ func New(gdb *gorm.DB, cacher types.Cacher, configResponseType types.ConfigRespo
 	return manager
 }
 
-func (manager *Manager) Startup(tasks ...types.Task) {
+func (manager *Manager) StartTasks(tasks ...types.Task) {
 	for _, task := range tasks {
 		go task(manager.db, manager.cacher)
 	}

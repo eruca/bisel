@@ -1,15 +1,11 @@
 package main
 
 import (
-	"bytes"
 	"flag"
-	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/eruca/bisel/manager"
 	"github.com/eruca/bisel/models/journal"
-	"github.com/eruca/bisel/net/ws"
 	"github.com/eruca/bisel/types"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
@@ -39,39 +35,12 @@ func main() {
 
 	// Manager
 	manager := manager.New(db, types.NewCacher(), nil, &journal.Journal{})
+	// 配置gin
+	engine := gin.Default()
+	engine.Use(cors())
+	manager.InitSystem(engine)
 
-	router := gin.Default()
-	router.Use(cors())
-
-	router.POST("/:table/:acid", func(c *gin.Context) {
-		table := c.Param("table")
-		acid := c.Param("acid")
-		router := fmt.Sprintf("%s/%s", table, acid)
-		req := types.FromHttpRequest(router, c.Request.Body)
-		log.Printf("http request from client: %-v\n", req)
-
-		manager.TakeAction(c.Writer, req, c.Request)
-	})
-
-	// 构建读入信息后的处理函数
-	processMixHttpRequest := func(httpReq *http.Request) ws.Process {
-		return func(send chan<- []byte, msg []byte) {
-			req := types.NewRequest(bytes.TrimSpace(msg))
-			log.Printf("websocket request from client: %-v\n", req)
-			manager.TakeAction(types.NewChanWriter(send), req, httpReq)
-		}
-	}
-	// 连接成功后马上发送的数据
-	connected := func(send chan<- []byte) {
-		log.Println("Connected now, will send some data to client")
-		manager.Connected(send)
-	}
-	wsHandler := ws.WebsocketHandler(processMixHttpRequest, connected)
-	router.GET("/ws", func(c *gin.Context) {
-		wsHandler(c.Writer, c.Request)
-	})
-
-	log.Fatalln("Router.Run:", "err", router.Run(":"+(*addr)))
+	log.Fatalln("Router.Run:", "err", engine.Run(":"+(*addr)))
 }
 
 // CORSMiddleware 实现跨域
