@@ -43,6 +43,12 @@ func New(db *types.DB, cacher types.Cacher,
 	return manager
 }
 
+func (manager *Manager) Startup(tasks ...types.Task) {
+	for _, task := range tasks {
+		go task(manager.db, manager.cacher)
+	}
+}
+
 // TakeAction 可以并发执行
 //! Notice: 因为写入都是在初始化阶段，读取可以并发
 func (manager *Manager) TakeAction(clientWriter io.Writer, req *types.Request, httpReq *http.Request) (err error) {
@@ -70,7 +76,7 @@ func (manager *Manager) TakeAction(clientWriter io.Writer, req *types.Request, h
 func (manager *Manager) Connected(c chan<- []byte) {
 	for _, tabler := range manager.tablers {
 		if connecter, ok := tabler.(types.Connectter); ok {
-			responder := connecter.Connected(manager.DB, manager.Cacher)
+			responder := connecter.Connected(manager.db, manager.cacher)
 			c <- responder.JSON()
 		}
 	}
