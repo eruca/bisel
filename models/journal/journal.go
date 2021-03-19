@@ -14,7 +14,7 @@ import (
 
 var (
 	_         btypes.Tabler = (*Journal)(nil)
-	tableName               = "journals"
+	tableName string        = "journals"
 )
 
 type Journal struct {
