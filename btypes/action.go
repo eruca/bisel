@@ -16,7 +16,6 @@ func HandlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig 
 	return func(c *Context) {
 		c.Tabler = tabler
 		pc := ParamsContextFromJSON(tabler, pt, c.Request.Payload)
-		pc.Init()
 		c.Parameters = &pc
 
 		c.Executor.actions = make([]Action, 0, len(handlers)+1)

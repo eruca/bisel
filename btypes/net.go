@@ -70,20 +70,17 @@ func NewRequest(msg []byte) *Request {
 
 // FromHttpRequest
 // http.router => TYPE
-// @body => Payload
+// @body => Payload, 如果是query,则可以使用null, 其他不行，所以不能再这里设置
 func FromHttpRequest(router string, rder io.ReadCloser) *Request {
-	request := &Request{Type: router}
 	if rder == nil {
 		log.Println("rder is nil")
-		panic(222)
+		panic("rder == nil")
 	}
+
+	request := &Request{Type: router}
 	err := json.NewDecoder(rder).Decode(&request.Payload)
-	if err != nil {
-		if err == io.EOF {
-			request.DefaultQueryParams()
-		} else {
-			panic(err)
-		}
+	if err != nil && err != io.EOF {
+		panic(err)
 	}
 	rder.Close()
 	return request

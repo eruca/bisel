@@ -95,6 +95,7 @@ func (manager *Manager) TakeAction(clientWriter io.Writer, req *btypes.Request, 
 
 	if handler, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.configResponseType)
+		// 在这里会对paramContext进行初始化
 		handler(ctx)
 		ctx.Start()
 

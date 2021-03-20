@@ -28,33 +28,35 @@ type ParamsContext struct {
 	Tabler
 }
 
-func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) ParamsContext {
+func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) (pc ParamsContext) {
 	switch pt {
 	case ParamQuery:
-		qp := &QueryParams{}
-		err := json.Unmarshal(rw, qp)
-		if err != nil {
-			panic(err)
-		}
+		pc.ParamType = pt
+		pc.QueryParams = &QueryParams{}
 
-		return ParamsContext{
-			ParamType:   pt,
-			QueryParams: qp,
+		if rw != nil {
+			err := json.Unmarshal(rw, &pc.QueryParams)
+			if err != nil {
+				panic(err)
+			}
 		}
 	case ParamUpsert, ParamDelete:
-		tabler_new := tabler.New()
-		err := json.Unmarshal(rw, tabler_new)
+		pc.ParamType = pt
+		if rw == nil {
+			panic("Upsert/Delete need params from request")
+		}
+
+		pc.Tabler = tabler.New()
+		err := json.Unmarshal(rw, pc.Tabler)
 		if err != nil {
 			panic(err)
 		}
-
-		return ParamsContext{
-			ParamType: pt,
-			Tabler:    tabler_new,
-		}
 	default:
-		return ParamsContext{}
+		panic("never happened")
 	}
+
+	pc.init()
+	return pc
 }
 
 func (pc *ParamsContext) init() {
