@@ -23,8 +23,14 @@ const (
 )
 
 type ParamsContext struct {
+	// Param的类型
 	ParamType
+	// Param具体的值，
+	// *QueryParams 保存查询时的参数
 	*QueryParams
+	// Tabler 保存Upsert/Delete的参数
+	// 因为这是按照这个对象增加/修改
+	// 或对象的id, version进行删除
 	Tabler
 }
 
