@@ -52,7 +52,7 @@ func QueryAssist(db *gorm.DB, tabler Tabler, pc *ParamsContext, total *int64, li
 	if err := tx.Where("1 = 1").Order(pc.QueryParams.Orderby).
 		Offset(int(pc.QueryParams.Offset)).
 		Limit(int(pc.QueryParams.Size)).
-		Find(list); err != nil {
+		Find(list).Error; err != nil {
 		tx.Rollback()
 		panic(err)
 	}
