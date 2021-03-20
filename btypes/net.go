@@ -44,20 +44,6 @@ func (req *Request) DefaultQueryParams() {
 	req.Payload = []byte(fmt.Sprintf(`{"size":%d}`, DEFAULT_QUERY_SIZE))
 }
 
-// func defaultFetchRequest(tabler Tabler) *Request {
-// 	return &Request{
-// 		Type:    tabler.TableName() + "/fetch",
-// 		Payload: []byte(fmt.Sprintf(`{"size":%d}`, DEFAULT_QUERY_SIZE)),
-// 	}
-// }
-
-// func defaultFetchRequestFromRouter(router string) *Request {
-// 	return &Request{
-// 		Type:    router,
-// 		Payload: []byte(fmt.Sprintf(`{"size":%d}`, DEFAULT_QUERY_SIZE)),
-// 	}
-// }
-
 // NewRequest 将msg解析为*Request
 func NewRequest(msg []byte) *Request {
 	request := &Request{}
