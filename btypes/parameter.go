@@ -57,10 +57,10 @@ func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) Para
 	}
 }
 
-func (pc *ParamsContext) Init() {
+func (pc *ParamsContext) init() {
 	switch pc.ParamType {
 	case ParamQuery:
-		pc.QueryParams.Init()
+		pc.QueryParams.init()
 	}
 }
 
@@ -92,7 +92,7 @@ func (qp *QueryParams) Type() ParamType {
 }
 
 // Init 中的list目的是获取外部指针，接收内部产生的数据作为返回
-func (qp *QueryParams) Init() {
+func (qp *QueryParams) init() {
 	if qp.Conds != nil {
 		sort.Strings(qp.Conds)
 	}
