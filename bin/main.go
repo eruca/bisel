@@ -34,7 +34,7 @@ func main() {
 	db = db.Debug()
 
 	// Manager
-	manager := manager.New(db, btypes.NewCacher(), nil, &journal.Journal{})
+	manager := manager.New(db, btypes.NewCacher(), manager.ManagerConfig{}, &journal.Journal{})
 	// 配置gin
 	engine := gin.Default()
 	engine.Use(cors())

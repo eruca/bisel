@@ -16,14 +16,6 @@ var (
 // ConfigResponseType 让使用者可以定制返回的Type结果
 type ConfigResponseType func(string, bool) string
 
-// 否则默认使用responseType作为ConfigResponseType
-func DefaultResponseType(reqType string, successed bool) string {
-	if successed {
-		return reqType + "_success"
-	}
-	return reqType + "_failure"
-}
-
 // ResponderToReader 代表将Responder转化为io.Reader
 func ResponderToReader(resp Responder) io.Reader {
 	return bytes.NewBuffer(resp.JSON())
@@ -40,9 +32,9 @@ func (req *Request) String() string {
 	return fmt.Sprintf(`{"type": %q, "payload": %s,"uuid": %q}`, req.Type, req.Payload, req.UUID)
 }
 
-func (req *Request) DefaultQueryParams() {
-	req.Payload = []byte(fmt.Sprintf(`{"size":%d}`, DEFAULT_QUERY_SIZE))
-}
+// func (req *Request) DefaultQueryParams() {
+// 	req.Payload = []byte(fmt.Sprintf(`{"size":%d}`, DEFAULT_QUERY_SIZE))
+// }
 
 // NewRequest 将msg解析为*Request
 func NewRequest(msg []byte) *Request {
