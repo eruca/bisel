@@ -8,7 +8,16 @@ import (
 )
 
 func UseCache(c *btypes.Context) fmt.Stringer {
-	if c.Parameters.ParamType != btypes.ParamQuery || c.Cacher == nil {
+	// 如果没有cache，直接跳过
+	if c.Cacher == nil {
+		c.Next()
+		return nil
+	}
+
+	paramType := c.Parameters.ParamType
+	// 如果是write: upsert/delete,需删除缓存数据
+	if paramType == btypes.ParamUpsert || paramType == btypes.ParamDelete {
+		c.Cacher.Clear(c.TableName())
 		c.Next()
 		return nil
 	}
