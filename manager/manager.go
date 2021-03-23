@@ -103,6 +103,7 @@ func (manager *Manager) TakeAction(clientWriter io.Writer, req *btypes.Request, 
 		}
 		respReader = btypes.ResponderToReader(ctx.Responder)
 		log.Printf("各个handler结果:\t%v\n", ctx.Results)
+		ctx.Dispose()
 	} else {
 		resp := btypes.BuildErrorResposeFromRequest(manager.Config.ConfigResponseType, req, fmt.Errorf("%q router not implemented yet", req.Type))
 		respReader = btypes.ResponderToReader(resp)
