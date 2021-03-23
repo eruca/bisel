@@ -3,7 +3,14 @@ package btypes
 import (
 	"fmt"
 	"net/http"
+	"sync"
 )
+
+var contextPool sync.Pool = sync.Pool{
+	New: func() interface{} {
+		return &Context{}
+	},
+}
 
 type Context struct {
 	*DB
@@ -27,9 +34,31 @@ type Context struct {
 	ConfigResponseType
 }
 
-func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType) (ctx *Context) {
-	return &Context{DB: db, Cacher: cacher, Request: req, HttpReq: httpReq, ConfigResponseType: cft}
+func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType) *Context {
+	ctx := contextPool.Get().(*Context)
+	ctx.DB = db
+	ctx.Cacher = cacher
+	ctx.Request = req
+	ctx.HttpReq = httpReq
+	ctx.ConfigResponseType = cft
+
+	// 初始化其他成员变量
+	ctx.Tabler = nil
+	ctx.Executor.actions = nil
+	ctx.Executor.cursor = 0
+	ctx.Results = nil
+	ctx.Parameters = nil
+	ctx.Responder = nil
+	return ctx
 }
+
+func (ctx *Context) Dispose() {
+	contextPool.Put(ctx)
+}
+
+// func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType) (ctx *Context) {
+// 	return &Context{DB: db, Cacher: cacher, Request: req, HttpReq: httpReq, ConfigResponseType: cft}
+// }
 
 func (c *Context) AddActions(actions ...Action) {
 	c.Executor.actions = append(c.Executor.actions, actions...)
