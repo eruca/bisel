@@ -27,10 +27,6 @@ func HandlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig 
 			if err != nil {
 				response = BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
 			} else {
-				if pc.ParamType == ParamDelete || pc.ParamType == ParamUpsert {
-					c.Cacher.Clear(tabler.TableName())
-				}
-
 				response = BuildFromRequest(c.ConfigResponseType, c.Request, true)
 				response.Add(pairs...)
 			}
