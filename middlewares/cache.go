@@ -10,8 +10,7 @@ import (
 func UseCache(c *btypes.Context) fmt.Stringer {
 	// 如果没有cache，直接跳过
 	if c.Cacher == nil {
-		c.Next()
-		return nil
+		panic("使用了Cache，而cacher却是nil，需设置")
 	}
 
 	paramType := c.Parameters.ParamType
