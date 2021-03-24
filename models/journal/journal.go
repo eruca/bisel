@@ -32,10 +32,9 @@ func (j *Journal) Model() *btypes.GormModel {
 func (j *Journal) Register(handlers map[string]btypes.ContextConfig) {
 	// 这里的j实际上是Manager.New时传入的对象
 	// 这个对象应该一直都是空值，只是作为调用
-	handlers[tableName+"/query"] = btypes.HandlerFunc(j, btypes.ParamQuery,
-		middlewares.TimeElapsed, middlewares.UseCache)
-	handlers[tableName+"/upsert"] = btypes.HandlerFunc(j, btypes.ParamUpsert, middlewares.TimeElapsed)
-	handlers[tableName+"/delete"] = btypes.HandlerFunc(j, btypes.ParamDelete, middlewares.TimeElapsed)
+	handlers[tableName+"/query"] = btypes.QueryHandler(j, middlewares.TimeElapsed, middlewares.UseCache)
+	handlers[tableName+"/upsert"] = btypes.UpsertHandler(j, middlewares.TimeElapsed)
+	handlers[tableName+"/delete"] = btypes.DeleteHandler(j, middlewares.TimeElapsed)
 }
 
 func (j *Journal) MustAutoMigrate(db *btypes.DB) {

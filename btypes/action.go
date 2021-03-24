@@ -38,3 +38,15 @@ func HandlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig 
 		})
 	}
 }
+
+func QueryHandler(tabler Tabler, handlers ...Action) ContextConfig {
+	return HandlerFunc(tabler, ParamQuery, handlers...)
+}
+
+func UpsertHandler(tabler Tabler, handlers ...Action) ContextConfig {
+	return HandlerFunc(tabler, ParamUpsert, handlers...)
+}
+
+func DeleteHandler(tabler Tabler, handlers ...Action) ContextConfig {
+	return HandlerFunc(tabler, ParamDelete, handlers...)
+}
