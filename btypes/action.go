@@ -12,7 +12,7 @@ type Action func(c *Context) fmt.Stringer
 // 对于Context进行配置
 type ContextConfig func(*Context)
 
-func HandlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig {
+func handlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig {
 	return func(c *Context) {
 		c.Tabler = tabler
 		pc := ParamsContextFromJSON(tabler, pt, c.Request.Payload)
@@ -40,13 +40,13 @@ func HandlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig 
 }
 
 func QueryHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return HandlerFunc(tabler, ParamQuery, handlers...)
+	return handlerFunc(tabler, ParamQuery, handlers...)
 }
 
 func UpsertHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return HandlerFunc(tabler, ParamUpsert, handlers...)
+	return handlerFunc(tabler, ParamUpsert, handlers...)
 }
 
 func DeleteHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return HandlerFunc(tabler, ParamDelete, handlers...)
+	return handlerFunc(tabler, ParamDelete, handlers...)
 }
