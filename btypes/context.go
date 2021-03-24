@@ -84,7 +84,7 @@ func (c *Context) Start() {
 }
 
 func (c *Context) LogResults() {
-	log.Println("各个handler结果:")
+	log.Printf("'%d'个handler结果:", len(c.Results))
 	for i := len(c.Results) - 1; i >= 0; i-- {
 		log.Printf("\t%d: %v\n", len(c.Results)-i, c.Results[i])
 	}
