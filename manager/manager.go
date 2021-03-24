@@ -23,7 +23,8 @@ type Manager struct {
 
 // InitSystem 分别启动http,websocket
 // 返回可以启动链式操作StartTask
-func (manager *Manager) InitSystem(engine *gin.Engine) *Manager {
+// @afterConnected => 表示除tabler实现Connectter外，其他想要传送的数据
+func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Connectter) *Manager {
 	engine.POST("/:table/:acid", func(c *gin.Context) {
 		table := c.Param("table")
 		acid := c.Param("acid")
@@ -46,6 +47,10 @@ func (manager *Manager) InitSystem(engine *gin.Engine) *Manager {
 	connected := func(send chan<- []byte) {
 		log.Println("Connected now, will send some data to client")
 		manager.Connected(send)
+		if afterConnected != nil {
+			resp := afterConnected.Connected(manager.db, manager.cacher)
+			send <- resp.JSON()
+		}
 	}
 	wsHandler := ws.WebsocketHandler(processMixHttpRequest, connected)
 	engine.GET("/ws", func(c *gin.Context) {

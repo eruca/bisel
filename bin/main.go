@@ -38,7 +38,7 @@ func main() {
 	// 配置gin
 	engine := gin.Default()
 	engine.Use(cors())
-	manager.InitSystem(engine)
+	manager.InitSystem(engine, nil)
 
 	log.Fatalln("Router.Run:", "err", engine.Run(":"+(*addr)))
 }
