@@ -25,10 +25,10 @@ type Manager struct {
 // 返回可以启动链式操作StartTask
 // @afterConnected => 表示除tabler实现Connectter外，其他想要传送的数据
 func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Connectter) *Manager {
-	engine.POST("/:table/:acid", func(c *gin.Context) {
+	engine.POST("/:table/:crud", func(c *gin.Context) {
 		table := c.Param("table")
-		acid := c.Param("acid")
-		router := fmt.Sprintf("%s/%s", table, acid)
+		crud := c.Param("crud")
+		router := fmt.Sprintf("%s/%s", table, crud)
 		req := btypes.FromHttpRequest(router, c.Request.Body)
 		log.Printf("http request from client: %-v\n", req)
 
