@@ -10,10 +10,10 @@ import (
 
 // Model ...
 type GormModel struct {
-	ID        uint           `gorm:"primarykey" json:"key,omitempty"`
+	ID        uint           `json:"key,omitempty" gorm:"primarykey"`
 	CreatedAt time.Time      `json:"created_at,omitempty"`
 	UpdatedAt time.Time      `json:"updated_at,omitempty"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
 	Version   uint           `json:"version,omitempty" gorm:"default:1"`
 }
 
