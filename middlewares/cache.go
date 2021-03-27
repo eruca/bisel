@@ -25,7 +25,7 @@ func UseCache(c *btypes.Context) fmt.Stringer {
 	// 如果客户端请求没有Hash这个值或者要求强制走数据库，就是没有缓存过
 	// 直接跳过
 	if params.ReforceUpdated {
-		noExistCache(c, params)
+		noExistInCache(c, params)
 		return nil
 	}
 
@@ -37,7 +37,7 @@ func UseCache(c *btypes.Context) fmt.Stringer {
 			c.Responder = btypes.NewRawBytes(value)
 			return bytes.NewBuffer(value)
 		} else {
-			noExistCache(c, params)
+			noExistInCache(c, params)
 			return nil
 		}
 	}
@@ -47,7 +47,7 @@ func UseCache(c *btypes.Context) fmt.Stringer {
 	// 如果客户端请求有Hash，可是在缓存中无法找到
 	// 表示缓存已经被删除
 	if !ok {
-		noExistCache(c, params)
+		noExistInCache(c, params)
 		return nil
 	}
 
@@ -58,7 +58,7 @@ func UseCache(c *btypes.Context) fmt.Stringer {
 	return bytes.NewBufferString("response without payload")
 }
 
-func noExistCache(c *btypes.Context, params *btypes.QueryParams) {
+func noExistInCache(c *btypes.Context, params *btypes.QueryParams) {
 	// 先进行后面的操作，返回的时候应该已经有Response了
 	// 就可以对其进行缓存
 	c.Next()
