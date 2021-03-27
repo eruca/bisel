@@ -1,7 +1,6 @@
 package btypes
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -23,7 +22,7 @@ type Context struct {
 		cursor  int
 	}
 	// 所有中间件的结果
-	Results []fmt.Stringer
+	Results []PairStringer
 
 	// 这个是http.Request, 是websocket连接的状态
 	HttpReq *http.Request
@@ -86,6 +85,6 @@ func (c *Context) Start() {
 func (c *Context) LogResults() {
 	log.Printf("'%d'个handler结果:", len(c.Results))
 	for i := len(c.Results) - 1; i >= 0; i-- {
-		log.Printf("\t%d: %v\n", len(c.Results)-i, c.Results[i])
+		log.Printf("\t%d: %s => %v\n", len(c.Results)-i, c.Results[i].Key, c.Results[i].Value)
 	}
 }

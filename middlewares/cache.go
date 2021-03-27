@@ -2,12 +2,15 @@ package middlewares
 
 import (
 	"bytes"
-	"fmt"
 
 	"github.com/eruca/bisel/btypes"
 )
 
-func UseCache(c *btypes.Context) fmt.Stringer {
+const (
+	PairKeyCache = "Use Cache"
+)
+
+func UseCache(c *btypes.Context) btypes.PairStringer {
 	// 如果没有cache，直接跳过
 	if c.Cacher == nil {
 		panic("使用了Cache，而cacher却是nil，需设置")
@@ -18,7 +21,7 @@ func UseCache(c *btypes.Context) fmt.Stringer {
 	if paramType == btypes.ParamUpsert || paramType == btypes.ParamDelete {
 		c.Cacher.Clear(c.TableName())
 		c.Next()
-		return nil
+		return btypes.PairStringer{Key: PairKeyCache, Value: nil}
 	}
 
 	params := c.Parameters.QueryParams
@@ -26,7 +29,7 @@ func UseCache(c *btypes.Context) fmt.Stringer {
 	// 直接跳过
 	if params.ReforceUpdated {
 		noExistInCache(c, params)
-		return nil
+		return btypes.PairStringer{Key: PairKeyCache, Value: nil}
 	}
 
 	// 发送过来的请求没有Hash
@@ -35,10 +38,10 @@ func UseCache(c *btypes.Context) fmt.Stringer {
 		value, ok := c.Cacher.Get(cacheKey)
 		if ok {
 			c.Responder = btypes.NewRawBytes(value)
-			return bytes.NewBuffer(value)
+			return btypes.PairStringer{Key: PairKeyCache, Value: bytes.NewBuffer(value)}
 		} else {
 			noExistInCache(c, params)
-			return nil
+			return btypes.PairStringer{Key: PairKeyCache, Value: nil}
 		}
 	}
 
@@ -48,14 +51,14 @@ func UseCache(c *btypes.Context) fmt.Stringer {
 	// 表示缓存已经被删除
 	if !ok {
 		noExistInCache(c, params)
-		return nil
+		return btypes.PairStringer{Key: "Use Cache", Value: nil}
 	}
 
 	// 如果缓存有数据，就直接返回给客户端了
 	// 那么后面的actions都不执行了，如果有想要执行的action必须在缓存之前
 	//! 查询了缓存后，不需要把Hash再一次给客户端，原来的Hash值还是有效的, 也不需要给数据，因为客户端有了
 	c.Responder = btypes.BuildFromRequest(c.ConfigResponseType, c.Request, true)
-	return bytes.NewBufferString("response without payload")
+	return btypes.PairStringer{Key: "Use Cache", Value: bytes.NewBufferString("response without payload")}
 }
 
 func noExistInCache(c *btypes.Context, params *btypes.QueryParams) {

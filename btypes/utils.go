@@ -1,6 +1,7 @@
 package btypes
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -34,4 +35,10 @@ func (ps *Pairs) Add(key string, value interface{}) {
 type PairString struct {
 	Key   string `json:"key,omitempty"`
 	Value string `json:"value,omitempty"`
+}
+
+// PairStringer 调试时可以比较好控制输出
+type PairStringer struct {
+	Key   string       `json:"key,omitempty"`
+	Value fmt.Stringer `json:"value,omitempty"`
 }

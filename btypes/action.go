@@ -2,12 +2,11 @@ package btypes
 
 import (
 	"bytes"
-	"fmt"
 )
 
 // Action
 //* return: 代表该Action返回的计算的值
-type Action func(c *Context) fmt.Stringer
+type Action func(c *Context) PairStringer
 
 // 对于Context进行配置
 type ContextConfig func(*Context)
@@ -21,9 +20,9 @@ func handlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig 
 		c.Executor.actions = make([]Action, 0, len(handlers)+1)
 		c.Executor.cursor = 0
 
-		c.Results = make([]fmt.Stringer, 0, len(handlers)+1)
+		c.Results = make([]PairStringer, 0, len(handlers)+1)
 		c.AddActions(handlers...)
-		c.AddActions(func(c *Context) fmt.Stringer {
+		c.AddActions(func(c *Context) PairStringer {
 			pairs, err := pc.CURD(c.DB, tabler)
 			var response *Response
 			if err != nil {
@@ -34,7 +33,7 @@ func handlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig 
 			}
 			c.Responder = response
 
-			return bytes.NewBuffer(response.JSON())
+			return c.Parameters.Assemble(bytes.NewBuffer(response.JSON()))
 		})
 	}
 }

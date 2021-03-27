@@ -72,6 +72,19 @@ func (pc *ParamsContext) init() {
 	}
 }
 
+func (pc *ParamsContext) Assemble(value fmt.Stringer) PairStringer {
+	switch pc.ParamType {
+	case ParamQuery:
+		return PairStringer{Key: "QUERY", Value: value}
+	case ParamUpsert:
+		return PairStringer{Key: "UPSERT", Value: value}
+	case ParamDelete:
+		return PairStringer{Key: "DELETE", Value: value}
+	default:
+		panic("never happen")
+	}
+}
+
 func (pc *ParamsContext) CURD(db *DB, tabler Tabler) (Pairs, error) {
 	switch pc.ParamType {
 	case ParamQuery:
