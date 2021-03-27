@@ -1,7 +1,6 @@
 package btypes
 
 import (
-	"encoding/json"
 	"io"
 )
 
@@ -35,12 +34,4 @@ func (ps *Pairs) Add(key string, value interface{}) {
 type PairString struct {
 	Key   string `json:"key,omitempty"`
 	Value string `json:"value,omitempty"`
-}
-
-func FromRequestPayload(rw json.RawMessage, tabler Tabler) Tabler {
-	err := json.Unmarshal(rw, tabler)
-	if err != nil {
-		panic(err)
-	}
-	return tabler
 }

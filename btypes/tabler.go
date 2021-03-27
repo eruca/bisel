@@ -27,6 +27,14 @@ type Tabler interface {
 	Dispose(error) (bool, error)
 }
 
+func FromRequestPayload(rw json.RawMessage, tabler Tabler) Tabler {
+	err := json.Unmarshal(rw, tabler)
+	if err != nil {
+		panic(err)
+	}
+	return tabler
+}
+
 type Connectter interface {
 	Connected(*DB, Cacher) Responder
 }
