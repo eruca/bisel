@@ -4,9 +4,9 @@ import (
 	"flag"
 	"log"
 
+	"github.com/eruca/bisel/bin/models/journal"
 	"github.com/eruca/bisel/btypes"
 	"github.com/eruca/bisel/manager"
-	"github.com/eruca/bisel/models/journal"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
