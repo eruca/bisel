@@ -129,21 +129,14 @@ func (resp *Response) Broadcast() bool {
 }
 
 //* RawBytes 就是把所有数据都直接放进去
-type RawBytes struct {
-	bytes     []byte
-	broadcast bool
-}
+type RawBytes []byte
 
-func NewRawBytes(data []byte) RawBytes { return RawBytes{bytes: data, broadcast: false} }
+func NewRawBytes(data []byte) RawBytes { return data }
 
 // JSON 实现Responser
-func (rb RawBytes) JSON() []byte {
-	return rb.bytes
-}
+func (rb RawBytes) JSON() []byte { return rb }
 
 // Broadcast ...
-func (rb RawBytes) Broadcast() bool {
-	return rb.broadcast
-}
+func (rb RawBytes) Broadcast() bool { return false }
 
 func (rb RawBytes) AddHash(string) {}
