@@ -6,6 +6,7 @@ import (
 	"sync"
 )
 
+// contextPool 减少Context分配的次数，增加性能
 var contextPool sync.Pool = sync.Pool{
 	New: func() interface{} {
 		return &Context{}
@@ -52,16 +53,12 @@ func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft 
 	return ctx
 }
 
-func (ctx *Context) Dispose() {
-	contextPool.Put(ctx)
-}
-
-// func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType) (ctx *Context) {
-// 	return &Context{DB: db, Cacher: cacher, Request: req, HttpReq: httpReq, ConfigResponseType: cft}
-// }
-
 func (c *Context) AddActions(actions ...Action) {
 	c.Executor.actions = append(c.Executor.actions, actions...)
+}
+
+func (c *Context) Start() {
+	c.exec()
 }
 
 func (c *Context) Next() {
@@ -78,11 +75,16 @@ func (c *Context) exec() {
 	}
 }
 
-func (c *Context) Start() {
-	c.exec()
+func (ctx *Context) End() {
+	ctx.logResults()
+	ctx.dispose()
 }
 
-func (c *Context) LogResults() {
+func (ctx *Context) dispose() {
+	contextPool.Put(ctx)
+}
+
+func (c *Context) logResults() {
 	log.Printf("'%d'个handler结果:", len(c.Results))
 	for i := len(c.Results) - 1; i >= 0; i-- {
 		log.Printf("\t%d: %s => %v\n", len(c.Results)-i, c.Results[i].Key, c.Results[i].Value)
