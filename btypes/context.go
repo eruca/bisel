@@ -14,6 +14,9 @@ var contextPool sync.Pool = sync.Pool{
 }
 
 type Context struct {
+	// 连接类型
+	ConnectionType
+
 	*DB
 	Tabler
 	Cacher
@@ -35,8 +38,10 @@ type Context struct {
 	ConfigResponseType
 }
 
-func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType) *Context {
+func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType, connType ConnectionType) *Context {
 	ctx := contextPool.Get().(*Context)
+
+	ctx.ConnectionType = connType
 	ctx.DB = db
 	ctx.Cacher = cacher
 	ctx.Request = req

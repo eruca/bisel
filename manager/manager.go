@@ -32,7 +32,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		req := btypes.FromHttpRequest(router, c.Request.Body)
 		log.Printf("http request from client: %-v\n", req)
 
-		manager.TakeAction(c.Writer, req, c.Request)
+		manager.TakeAction(c.Writer, req, c.Request, btypes.HTTP)
 	})
 
 	// 构建读入信息后的处理函数
@@ -40,7 +40,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		return func(send chan<- []byte, msg []byte) {
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
 			log.Printf("websocket request from client: %-v\n", req)
-			manager.TakeAction(btypes.NewChanWriter(send), req, httpReq)
+			manager.TakeAction(btypes.NewChanWriter(send), req, httpReq, btypes.WEBSOCKET)
 		}
 	}
 	// 连接成功后马上发送的数据
@@ -94,11 +94,11 @@ func (manager *Manager) StartTasks(tasks ...btypes.Task) {
 
 // TakeAction 可以并发执行
 //! Notice: 因为写入都是在初始化阶段，读取可以并发
-func (manager *Manager) TakeAction(clientWriter io.Writer, req *btypes.Request, httpReq *http.Request) (err error) {
+func (manager *Manager) TakeAction(clientWriter io.Writer, req *btypes.Request, httpReq *http.Request, connType btypes.ConnectionType) (err error) {
 	var respReader io.Reader
 
 	if handler, ok := manager.handlers[req.Type]; ok {
-		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.Config.ConfigResponseType)
+		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.Config.ConfigResponseType, connType)
 		// 在这里会对paramContext进行初始化
 		handler(ctx)
 		ctx.Start()
