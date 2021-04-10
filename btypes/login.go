@@ -57,8 +57,12 @@ func login(db *DB, loginTabler LoginTabler) error {
 	return nil
 }
 
-type Claims struct {
+type ClaimContent struct {
 	ID uint
+}
+
+type Claims struct {
+	ClaimContent
 	jwt.StandardClaims
 }
 
@@ -67,7 +71,7 @@ type Claims struct {
 func generate_jwt(tabler Tabler) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodES256,
 		Claims{
-			ID: tabler.Model().ID,
+			ClaimContent: ClaimContent{ID: tabler.Model().ID},
 			StandardClaims: jwt.StandardClaims{
 				ExpiresAt: time.Now().Add(expireDuration).Unix(),
 			},
@@ -87,4 +91,28 @@ func login_jwt(db *DB, loginTabler LoginTabler) (Pairs, error) {
 	// todo: 是返回给Header还是Payload
 	pairs := Pairs{Pair{Key: "token", Value: token}}
 	return pairs, nil
+}
+
+func ParseToken(tokenString string) (*Claims, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &Claims{},
+		func(t *jwt.Token) (interface{}, error) { return []byte(salt), nil })
+
+	if err != nil {
+		if ve, ok := err.(*jwt.ValidationError); ok {
+			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+				return nil, ErrInvalidToken
+			} else if ve.Errors&jwt.ValidationErrorExpired != 0 {
+				// Token is expired
+				return nil, ErrTokenExpired
+			} else if ve.Errors&jwt.ValidationErrorNotValidYet != 0 {
+				return nil, ErrInvalidToken
+			} else {
+				return nil, ErrInvalidToken
+			}
+		}
+	}
+	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+		return claims, nil
+	}
+	return nil, ErrInvalidToken
 }

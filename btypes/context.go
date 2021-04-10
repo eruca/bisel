@@ -18,8 +18,12 @@ type Context struct {
 	ConnectionType
 
 	*DB
+	// 该Tabler 代表需要操作的数据表，比如{journals}/query
 	Tabler
 	Cacher
+
+	//! todo 登录人员的权限
+	*ClaimContent
 
 	Executor struct {
 		actions []Action
