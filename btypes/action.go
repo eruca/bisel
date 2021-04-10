@@ -13,15 +13,9 @@ type ContextConfig func(*Context)
 
 func handlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig {
 	return func(c *Context) {
-		c.Tabler = tabler
 		pc := ParamsContextFromJSON(tabler, pt, c.Request.Payload)
-		c.Parameters = &pc
+		c.config(tabler, &pc, handlers...)
 
-		c.Executor.actions = make([]Action, 0, len(handlers)+1)
-		c.Executor.cursor = 0
-
-		c.Results = make([]PairStringer, 0, len(handlers)+1)
-		c.AddActions(handlers...)
 		c.AddActions(func(c *Context) PairStringer {
 			pairs, err := pc.CURD(c.DB, tabler)
 			var response *Response

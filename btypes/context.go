@@ -50,12 +50,23 @@ func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft 
 
 	// 初始化其他成员变量
 	ctx.Tabler = nil
+	ctx.Parameters = nil
 	ctx.Executor.actions = nil
 	ctx.Executor.cursor = 0
 	ctx.Results = nil
-	ctx.Parameters = nil
 	ctx.Responder = nil
 	return ctx
+}
+
+func (c *Context) config(tabler Tabler, pt *ParamsContext, handlers ...Action) {
+	c.Tabler = tabler
+	c.Parameters = pt
+
+	c.Executor.actions = make([]Action, 0, len(handlers)+1)
+	c.Executor.cursor = 0
+
+	c.Results = make([]PairStringer, 0, len(handlers)+1)
+	c.AddActions(handlers...)
 }
 
 func (c *Context) AddActions(actions ...Action) {
