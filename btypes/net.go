@@ -35,15 +35,13 @@ type Request struct {
 	Type    string          `json:"type,omitempty"`
 	Payload json.RawMessage `json:"payload,omitempty"`
 	UUID    string          `json:"uuid,omitempty"`
+	Token   string          `json:"token,omitempty"`
 }
 
 func (req *Request) String() string {
-	return fmt.Sprintf(`{"type": %q, "payload": %s,"uuid": %q}`, req.Type, req.Payload, req.UUID)
+	return fmt.Sprintf(`{"type": %q, "payload": %s,"uuid": %q, "token":%q}`,
+		req.Type, req.Payload, req.UUID, req.Token)
 }
-
-// func (req *Request) DefaultQueryParams() {
-// 	req.Payload = []byte(fmt.Sprintf(`{"size":%d}`, DEFAULT_QUERY_SIZE))
-// }
 
 // NewRequest 将msg解析为*Request
 func NewRequest(msg []byte) *Request {
