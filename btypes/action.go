@@ -17,8 +17,9 @@ func handlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig 
 		c.config(tabler, &pc, handlers...)
 
 		c.AddActions(func(c *Context) PairStringer {
-			pairs, err := pc.Do(c.DB, tabler)
 			var response *Response
+
+			pairs, err := pc.Do(c.DB, tabler)
 			if err != nil {
 				response = BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
 			} else {
