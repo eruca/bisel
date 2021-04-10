@@ -17,8 +17,8 @@ const (
 )
 
 type Loginer interface {
-	GetAccount() PairString
-	GetPassword() PairString
+	GetAccount() PairStringer
+	GetPassword() PairStringer
 }
 
 // LoginTabler 同时又Tabler与Login,就是该表作为用户登录表
@@ -44,7 +44,7 @@ func login(db *DB, loginTabler LoginTabler) error {
 		panic(err)
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password.Value), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password.Value.String()), bcrypt.DefaultCost)
 	if err != nil {
 		panic(err)
 	}

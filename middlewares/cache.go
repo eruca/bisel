@@ -1,8 +1,6 @@
 package middlewares
 
 import (
-	"bytes"
-
 	"github.com/eruca/bisel/btypes"
 )
 
@@ -38,7 +36,7 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 		value, ok := c.Cacher.Get(cacheKey)
 		if ok {
 			c.Responder = btypes.NewRawBytes(value)
-			return btypes.PairStringer{Key: PairKeyCache, Value: bytes.NewBuffer(value)}
+			return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString(value)}
 		} else {
 			noExistInCache(c, params)
 			return btypes.PairStringer{Key: PairKeyCache, Value: nil}
@@ -58,7 +56,7 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 	// 那么后面的actions都不执行了，如果有想要执行的action必须在缓存之前
 	//! 查询了缓存后，不需要把Hash再一次给客户端，原来的Hash值还是有效的, 也不需要给数据，因为客户端有了
 	c.Responder = btypes.BuildFromRequest(c.ConfigResponseType, c.Request, true)
-	return btypes.PairStringer{Key: "Use Cache", Value: bytes.NewBufferString("response without payload")}
+	return btypes.PairStringer{Key: "Use Cache", Value: btypes.ValueString("response without payload")}
 }
 
 func noExistInCache(c *btypes.Context, params *btypes.QueryParams) {

@@ -30,7 +30,7 @@ func (model *GormModel) insert(db *DB, tabler Tabler) error {
 		for _, group := range ErrGroup {
 			if strings.Contains(e, group.Key) {
 				s := strings.TrimSpace(strings.TrimPrefix(e, group.Key))
-				return fmt.Errorf(group.Value, s)
+				return fmt.Errorf(group.Value.String(), s)
 			}
 		}
 		panic(err)

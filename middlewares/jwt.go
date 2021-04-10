@@ -17,7 +17,7 @@ func Parse(c *btypes.Context, token string) btypes.PairStringer {
 	}
 	c.ClaimContent = &claim.ClaimContent
 	c.Next()
-	return btypes.PairStringer{Key: PairKeyJWT, Value: bytes.NewBufferString("JWT authority success")}
+	return btypes.PairStringer{Key: PairKeyJWT, Value: btypes.ValueString("JWT authority success")}
 }
 
 func JwtAuthorize(c *btypes.Context) (result btypes.PairStringer) {
@@ -33,7 +33,7 @@ func JwtAuthorize(c *btypes.Context) (result btypes.PairStringer) {
 	if c.Request.Token == "" {
 		c.Responder = btypes.BuildErrorResposeFromRequest(c.ConfigResponseType,
 			c.Request, btypes.ErrInvalidToken)
-		return btypes.PairStringer{Key: PairKeyJWT, Value: bytes.NewBufferString(btypes.ErrInvalidToken.Error())}
+		return btypes.PairStringer{Key: PairKeyJWT, Value: btypes.ValueString(btypes.ErrInvalidToken.Error())}
 	}
 	return Parse(c, c.Request.Token)
 }

@@ -10,10 +10,10 @@ var (
 	ErrGroup                               = NewErrorGroup()
 )
 
-type ErrorGroup []PairString
+type ErrorGroup []PairStringer
 
 func NewErrorGroup() ErrorGroup {
-	return []PairString{
-		{Key: "UNIQUE constraint failed:", Value: "违反唯一限制: %s"},
+	return []PairStringer{
+		{Key: "UNIQUE constraint failed:", Value: ValueString("违反唯一限制: %s")},
 	}
 }
