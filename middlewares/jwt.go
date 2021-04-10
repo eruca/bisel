@@ -9,24 +9,13 @@ import (
 
 const PairKeyJWT = "JWT"
 
-func Parse(c *btypes.Context, token string) btypes.PairStringer {
-	claim, err := btypes.ParseToken(token)
-	if err != nil {
-		c.Responder = btypes.BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
-		return btypes.PairStringer{Key: PairKeyJWT, Value: bytes.NewBufferString(err.Error())}
-	}
-	c.ClaimContent = &claim.ClaimContent
-	c.Next()
-	return btypes.PairStringer{Key: PairKeyJWT, Value: btypes.ValueString("JWT authority success")}
-}
-
 func JwtAuthorize(c *btypes.Context) (result btypes.PairStringer) {
 	var token string
 
 	if c.ConnectionType == btypes.HTTP {
 		if v := c.HttpReq.Header.Get("Authorization"); len(v) > 7 && strings.ToLower(v[:6]) == "bearer" {
 			token = v[7:]
-			return Parse(c, token)
+			return parse(c, token)
 		}
 	}
 
@@ -35,5 +24,16 @@ func JwtAuthorize(c *btypes.Context) (result btypes.PairStringer) {
 			c.Request, btypes.ErrInvalidToken)
 		return btypes.PairStringer{Key: PairKeyJWT, Value: btypes.ValueString(btypes.ErrInvalidToken.Error())}
 	}
-	return Parse(c, c.Request.Token)
+	return parse(c, c.Request.Token)
+}
+
+func parse(c *btypes.Context, token string) btypes.PairStringer {
+	claim, err := btypes.ParseToken(token)
+	if err != nil {
+		c.Responder = btypes.BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
+		return btypes.PairStringer{Key: PairKeyJWT, Value: bytes.NewBufferString(err.Error())}
+	}
+	c.ClaimContent = &claim.ClaimContent
+	c.Next()
+	return btypes.PairStringer{Key: PairKeyJWT, Value: btypes.ValueString("JWT authority success")}
 }
