@@ -22,6 +22,18 @@ const (
 	ParamDelete
 )
 
+func (p ParamType) String() string {
+	switch p {
+	case ParamQuery:
+		return "ParamQuery"
+	case ParamUpsert:
+		return "ParamUpsert"
+	case ParamDelete:
+		return "ParamDelete"
+	}
+	return ""
+}
+
 type ParamsContext struct {
 	// Param的类型
 	ParamType
