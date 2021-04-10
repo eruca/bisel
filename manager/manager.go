@@ -26,8 +26,7 @@ type Manager struct {
 // @afterConnected => 表示除tabler实现Connectter外，其他想要传送的数据
 func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Connectter) *Manager {
 	engine.POST("/:table/:crud", func(c *gin.Context) {
-		table := c.Param("table")
-		crud := c.Param("crud")
+		table, crud := c.Param("table"), c.Param("crud")
 		router := fmt.Sprintf("%s/%s", table, crud)
 		req := btypes.FromHttpRequest(router, c.Request.Body)
 		log.Printf("http request from client: %-v\n", req)
@@ -94,20 +93,21 @@ func (manager *Manager) StartTasks(tasks ...btypes.Task) {
 
 // TakeAction 可以并发执行
 //! Notice: 因为写入都是在初始化阶段，读取可以并发
-func (manager *Manager) TakeAction(clientWriter io.Writer, req *btypes.Request, httpReq *http.Request, connType btypes.ConnectionType) (err error) {
+func (manager *Manager) TakeAction(clientWriter io.Writer, req *btypes.Request,
+	httpReq *http.Request, connType btypes.ConnectionType) (err error) {
 	var respReader io.Reader
 
-	if handler, ok := manager.handlers[req.Type]; ok {
+	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.Config.ConfigResponseType, connType)
 		// 在这里会对paramContext进行初始化
-		handler(ctx)
-		ctx.Start()
+		contextConfig(ctx)
 
+		ctx.StartWorkFlow()
 		if ctx.Responder == nil {
 			panic("需要返回一个结果给客户端")
 		}
 		respReader = btypes.ResponderToReader(ctx.Responder)
-		ctx.End()
+		ctx.Finish()
 	} else {
 		resp := btypes.BuildErrorResposeFromRequest(manager.Config.ConfigResponseType, req, fmt.Errorf("%q router not implemented yet", req.Type))
 		respReader = btypes.ResponderToReader(resp)

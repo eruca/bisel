@@ -77,7 +77,7 @@ func (c *Context) AddActions(actions ...Action) {
 	c.Executor.actions = append(c.Executor.actions, actions...)
 }
 
-func (c *Context) Start() {
+func (c *Context) StartWorkFlow() {
 	c.exec()
 }
 
@@ -95,7 +95,7 @@ func (c *Context) exec() {
 	}
 }
 
-func (ctx *Context) End() {
+func (ctx *Context) Finish() {
 	ctx.logResults()
 	ctx.dispose()
 }
