@@ -5,26 +5,25 @@ import (
 )
 
 type Tabler interface {
-	Model() *GormModel
-	FromRequest(json.RawMessage) Tabler
-	TableName() string
-	Upsert(*DB, *ParamsContext) (Pairs, error)
-	Delete(*DB, *ParamsContext) (Pairs, error)
 	New() Tabler
+	FromRequest(json.RawMessage) Tabler
 
-	// Query 对于该表进行查询
-	// @params: 代表查询的参数
-	// return string: 代表该返回在Payload里的key
-	// return interface{}: 代表该返回key对应的结果
-	Query(*DB, *ParamsContext) (Pairs, error)
+	TableName() string
+	Model() *GormModel
 	MustAutoMigrate(*DB)
-
-	// Connected(*Context)
 	Register(map[string]ContextConfig)
 	// 处理错误：
 	// err, true: 如果是处理过的错误要返回给客户端
 	// err, false: 意外的错误
 	Dispose(error) (bool, error)
+
+	Upsert(*DB, *ParamsContext) (Pairs, error)
+	// Query 对于该表进行查询
+	// @params: 代表查询的参数
+	// return string: 代表该返回在Payload里的key
+	// return interface{}: 代表该返回key对应的结果
+	Query(*DB, *ParamsContext) (Pairs, error)
+	Delete(*DB, *ParamsContext) (Pairs, error)
 }
 
 func FromRequestPayload(rw json.RawMessage, tabler Tabler) Tabler {
