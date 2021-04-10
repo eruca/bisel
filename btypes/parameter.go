@@ -102,7 +102,8 @@ func (pc *ParamsContext) Assemble(value fmt.Stringer) PairStringer {
 	}
 }
 
-func (pc *ParamsContext) CURD(db *DB, tabler Tabler) (Pairs, error) {
+// ParamsContext 针对不同的ParamType 采取相应的处理
+func (pc *ParamsContext) Do(db *DB, tabler Tabler) (Pairs, error) {
 	switch pc.ParamType {
 	case ParamQuery:
 		// 应为客户端传送过来的数据不会序列化为Tabler，所以使用注入tabler
