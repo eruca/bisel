@@ -20,6 +20,7 @@ const (
 	ParamQuery ParamType = iota
 	ParamUpsert
 	ParamDelete
+	ParamLogin
 )
 
 func (p ParamType) String() string {
@@ -30,6 +31,8 @@ func (p ParamType) String() string {
 		return "ParamUpsert"
 	case ParamDelete:
 		return "ParamDelete"
+	case ParamLogin:
+		return "ParamLogin"
 	}
 	return ""
 }
@@ -58,10 +61,10 @@ func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) (pc 
 				panic(err)
 			}
 		}
-	case ParamUpsert, ParamDelete:
+	case ParamUpsert, ParamDelete, ParamLogin:
 		pc.ParamType = pt
 		if rw == nil {
-			panic("Upsert/Delete need params from request")
+			panic(fmt.Sprintf("%s is nil", pt))
 		}
 
 		pc.Tabler = tabler.New()
@@ -92,6 +95,8 @@ func (pc *ParamsContext) Assemble(value fmt.Stringer) PairStringer {
 		return PairStringer{Key: "UPSERT", Value: value}
 	case ParamDelete:
 		return PairStringer{Key: "DELETE", Value: value}
+	case ParamLogin:
+		return PairStringer{Key: "LOGIN", Value: value}
 	default:
 		panic("never happen")
 	}
@@ -110,6 +115,14 @@ func (pc *ParamsContext) CURD(db *DB, tabler Tabler) (Pairs, error) {
 	case ParamDelete:
 		// 同ParamUpsert
 		return pc.Tabler.Delete(db, pc)
+
+	case ParamLogin:
+		loginTabler, ok := pc.Tabler.(LoginTabler)
+		if !ok {
+			panic(fmt.Sprintf("%s 没有实现 LoginTabler", pc.TableName()))
+		}
+		return login_jwt(db, loginTabler)
+
 	default:
 		panic("should not happened")
 	}
