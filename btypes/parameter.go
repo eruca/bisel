@@ -88,11 +88,16 @@ func (pc *ParamsContext) Assemble(value fmt.Stringer) PairStringer {
 func (pc *ParamsContext) CURD(db *DB, tabler Tabler) (Pairs, error) {
 	switch pc.ParamType {
 	case ParamQuery:
+		// 应为客户端传送过来的数据不会序列化为Tabler，所以使用注入tabler
 		return tabler.Query(db, pc)
+
 	case ParamUpsert:
-		return tabler.Upsert(db, pc)
+		// pc.Tabler代表从客户端过来序列化后的数据
+		return pc.Tabler.Upsert(db, pc)
+
 	case ParamDelete:
-		return tabler.Delete(db, pc)
+		// 同ParamUpsert
+		return pc.Tabler.Delete(db, pc)
 	default:
 		panic("should not happened")
 	}
