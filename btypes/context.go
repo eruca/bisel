@@ -23,7 +23,7 @@ type Context struct {
 	Cacher
 
 	//! todo 登录人员的权限
-	*ClaimContent
+	JwtSession interface{}
 
 	Executor struct {
 		actions []Action

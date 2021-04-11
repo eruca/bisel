@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/eruca/bisel/utils"
+	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -27,21 +29,29 @@ type LoginTabler interface {
 	Tabler
 }
 
-func login(db *DB, loginTabler LoginTabler) error {
-	var passwordFromDB string
+func login(db *DB, loginTabler LoginTabler, jwtSession interface{}) error {
+	var result map[string]interface{}
 
 	account := loginTabler.GetAccount()
 	password := loginTabler.GetPassword()
 
 	if err := db.Gorm.
 		Model(loginTabler).
-		Select(password.Key).
 		Where(fmt.Sprintf("%s = ?", account.Key), account.Value).
-		Scan(&passwordFromDB).Error; err != nil {
+		First(&result).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrAccountNotExistOrPasswordNotCorrect
 		}
 		panic(err)
+	}
+
+	passwordFromDb, ok := result[password.Key]
+	if !ok {
+		panic(fmt.Sprintf("%q 不存在于 数据库:%q中", password.Key, loginTabler.TableName()))
+	}
+	pswdFromDb, ok := passwordFromDb.(string)
+	if !ok {
+		panic(fmt.Sprintf("%s 应该是 string 类型", password.Key))
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password.Value.String()), bcrypt.DefaultCost)
@@ -49,29 +59,36 @@ func login(db *DB, loginTabler LoginTabler) error {
 		panic(err)
 	}
 
-	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(passwordFromDB))
+	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(pswdFromDb))
 	if err != nil {
 		log.Println(err)
 		return ErrAccountNotExistOrPasswordNotCorrect
 	}
+	// 如果jwtSession为空，直接返回
+	if jwtSession == nil {
+		return nil
+	}
+
+	err = mapstructure.Decode(result, jwtSession)
+	if err != nil {
+		panic(err)
+	}
 	return nil
 }
 
-type ClaimContent struct {
-	ID uint
-}
-
 type Claims struct {
-	ClaimContent
+	Session map[string]interface{}
 	jwt.StandardClaims
 }
 
 // 登录成功后产生的jwt返回给客户端
 // todo: 1. 写在header() 2.写在payload里
-func generate_jwt(tabler Tabler) (string, error) {
+func generate_jwt(jwtSession interface{}) (string, error) {
+	sess := utils.Struct2Map(jwtSession)
+
 	token := jwt.NewWithClaims(jwt.SigningMethodES256,
 		Claims{
-			ClaimContent: ClaimContent{ID: tabler.Model().ID},
+			Session: sess,
 			StandardClaims: jwt.StandardClaims{
 				ExpiresAt: time.Now().Add(expireDuration).Unix(),
 			},
@@ -79,8 +96,8 @@ func generate_jwt(tabler Tabler) (string, error) {
 	return token.SignedString([]byte(salt))
 }
 
-func login_jwt(db *DB, loginTabler LoginTabler) (Pairs, error) {
-	err := login(db, loginTabler)
+func login_jwt(db *DB, loginTabler LoginTabler, jwtSession interface{}) (Pairs, error) {
+	err := login(db, loginTabler, jwtSession)
 	if err != nil {
 		return nil, nil
 	}
@@ -93,26 +110,30 @@ func login_jwt(db *DB, loginTabler LoginTabler) (Pairs, error) {
 	return pairs, nil
 }
 
-func ParseToken(tokenString string) (*Claims, error) {
+func ParseToken(tokenString string, jwtSession interface{}) error {
 	token, err := jwt.ParseWithClaims(tokenString, &Claims{},
 		func(t *jwt.Token) (interface{}, error) { return []byte(salt), nil })
 
 	if err != nil {
 		if ve, ok := err.(*jwt.ValidationError); ok {
 			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-				return nil, ErrInvalidToken
+				return ErrInvalidToken
 			} else if ve.Errors&jwt.ValidationErrorExpired != 0 {
 				// Token is expired
-				return nil, ErrTokenExpired
+				return ErrTokenExpired
 			} else if ve.Errors&jwt.ValidationErrorNotValidYet != 0 {
-				return nil, ErrInvalidToken
+				return ErrInvalidToken
 			} else {
-				return nil, ErrInvalidToken
+				return ErrInvalidToken
 			}
 		}
 	}
 	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		return claims, nil
+		err = mapstructure.Decode(claims.Session, jwtSession)
+		if err != nil {
+			panic(err)
+		}
+		return nil
 	}
-	return nil, ErrInvalidToken
+	return ErrInvalidToken
 }

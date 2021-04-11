@@ -46,7 +46,7 @@ func (j *Journal) MustAutoMigrate(db *btypes.DB) {
 
 func (j *Journal) TableName() string { return tableName }
 
-func (j *Journal) Upsert(db *btypes.DB, pc *btypes.ParamsContext) (pairs btypes.Pairs, err error) {
+func (j *Journal) Upsert(db *btypes.DB, pc *btypes.ParamsContext, jwtSession interface{}) (pairs btypes.Pairs, err error) {
 	var inserted bool
 	inserted, err = pc.Tabler.Model().Upsert(db, pc.Tabler)
 	if err != nil {
@@ -65,7 +65,7 @@ func (j *Journal) Upsert(db *btypes.DB, pc *btypes.ParamsContext) (pairs btypes.
 // @params: 代表查询的参数
 // return string: 代表该返回在Payload里的key
 // return interface{}: 代表该返回key对应的结果
-func (j *Journal) Query(db *btypes.DB, pc *btypes.ParamsContext) (pairs btypes.Pairs, err error) {
+func (j *Journal) Query(db *btypes.DB, pc *btypes.ParamsContext, jwtSession interface{}) (pairs btypes.Pairs, err error) {
 	var total int64
 	var list []*Journal
 
@@ -80,7 +80,7 @@ func (j *Journal) Query(db *btypes.DB, pc *btypes.ParamsContext) (pairs btypes.P
 	return
 }
 
-func (j *Journal) Delete(db *btypes.DB, pc *btypes.ParamsContext) (pairs btypes.Pairs, err error) {
+func (j *Journal) Delete(db *btypes.DB, pc *btypes.ParamsContext, jwtSession interface{}) (pairs btypes.Pairs, err error) {
 	log.Printf("delete %#v", pc.Tabler)
 	var n int64
 	n, err = pc.Tabler.Model().SoftDelete(db, pc.Tabler)

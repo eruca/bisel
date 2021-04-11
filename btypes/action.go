@@ -11,15 +11,27 @@ type Action func(c *Context) PairStringer
 // 对于Context进行配置
 type ContextConfig func(*Context)
 
-func handlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig {
+// jwtSession: 目的是将jwt的需求构造成一个结构体，发送给客户端就可以里，这个Context也完成使命被回收了
+func handlerFunc(tabler Tabler, pt ParamType, jwtSession interface{}, handlers ...Action) ContextConfig {
 	return func(c *Context) {
 		pc := ParamsContextFromJSON(tabler, pt, c.Request.Payload)
 		c.config(tabler, &pc, handlers...)
 
 		c.AddActions(func(c *Context) PairStringer {
-			var response *Response
+			var (
+				response *Response
+				pairs    Pairs
+				err      error
+			)
 
-			pairs, err := pc.Do(c.DB, tabler)
+			// ParamLogin 是构造jwtSession
+			// 其他是使用jwtSession
+			if pt == ParamLogin {
+				pairs, err = pc.Do(c.DB, tabler, jwtSession)
+			} else {
+				pairs, err = pc.Do(c.DB, tabler, c.JwtSession)
+			}
+
 			if err != nil {
 				response = BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
 			} else {
@@ -34,13 +46,17 @@ func handlerFunc(tabler Tabler, pt ParamType, handlers ...Action) ContextConfig 
 }
 
 func QueryHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return handlerFunc(tabler, ParamQuery, handlers...)
+	return handlerFunc(tabler, ParamQuery, nil, handlers...)
 }
 
 func UpsertHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return handlerFunc(tabler, ParamUpsert, handlers...)
+	return handlerFunc(tabler, ParamUpsert, nil, handlers...)
 }
 
 func DeleteHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return handlerFunc(tabler, ParamDelete, handlers...)
+	return handlerFunc(tabler, ParamDelete, nil, handlers...)
+}
+
+func LoginHandler(tabler Tabler, jwtSession interface{}, handlers ...Action) ContextConfig {
+	return handlerFunc(tabler, ParamLogin, jwtSession, handlers...)
 }
