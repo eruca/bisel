@@ -12,7 +12,7 @@ type Action func(c *Context) PairStringer
 type ContextConfig func(*Context)
 
 // jwtSession: 目的是将jwt的需求构造成一个结构体，发送给客户端就可以里，这个Context也完成使命被回收了
-func handlerFunc(tabler Tabler, pt ParamType, jwtSession interface{}, handlers ...Action) ContextConfig {
+func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...Action) ContextConfig {
 	return func(c *Context) {
 		pc := ParamsContextFromJSON(tabler, pt, c.Request.Payload)
 		c.config(tabler, &pc, handlers...)
@@ -57,6 +57,6 @@ func DeleteHandler(tabler Tabler, handlers ...Action) ContextConfig {
 	return handlerFunc(tabler, ParamDelete, nil, handlers...)
 }
 
-func LoginHandler(tabler Tabler, jwtSession interface{}, handlers ...Action) ContextConfig {
+func LoginHandler(tabler Tabler, jwtSession Defaulter, handlers ...Action) ContextConfig {
 	return handlerFunc(tabler, ParamLogin, jwtSession, handlers...)
 }

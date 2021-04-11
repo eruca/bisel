@@ -29,7 +29,11 @@ type LoginTabler interface {
 	Tabler
 }
 
-func login(db *DB, loginTabler LoginTabler, jwtSession interface{}) error {
+type Defaulter interface {
+	Default() Defaulter
+}
+
+func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) error {
 	var result map[string]interface{}
 
 	account := loginTabler.GetAccount()
@@ -83,7 +87,7 @@ type Claims struct {
 
 // 登录成功后产生的jwt返回给客户端
 // todo: 1. 写在header() 2.写在payload里
-func generate_jwt(jwtSession interface{}) (string, error) {
+func generate_jwt(jwtSession Defaulter) (string, error) {
 	sess := utils.Struct2Map(jwtSession)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodES256,
@@ -96,12 +100,12 @@ func generate_jwt(jwtSession interface{}) (string, error) {
 	return token.SignedString([]byte(salt))
 }
 
-func login_jwt(db *DB, loginTabler LoginTabler, jwtSession interface{}) (Pairs, error) {
+func login_jwt(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Pairs, error) {
 	err := login(db, loginTabler, jwtSession)
 	if err != nil {
 		return nil, nil
 	}
-	token, err := generate_jwt(loginTabler)
+	token, err := generate_jwt(jwtSession)
 	if err != nil {
 		panic(err)
 	}
