@@ -108,13 +108,9 @@ func ParseToken(tokenString string, jwtSession Defaulter) error {
 	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) { return []byte(salt), nil })
 	if err != nil {
 		if ve, ok := err.(*jwt.ValidationError); ok {
-			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-				return ErrInvalidToken
-			} else if ve.Errors&jwt.ValidationErrorExpired != 0 {
+			if ve.Errors&jwt.ValidationErrorExpired != 0 {
 				// Token is expired
 				return ErrTokenExpired
-			} else if ve.Errors&jwt.ValidationErrorNotValidYet != 0 {
-				return ErrInvalidToken
 			} else {
 				return ErrInvalidToken
 			}
