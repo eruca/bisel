@@ -64,6 +64,7 @@ func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) (pc 
 	case ParamUpsert, ParamDelete, ParamLogin:
 		pc.ParamType = pt
 		if rw == nil {
+			// todo: 如果发送的信息，没有信息体，是否需要panic
 			panic(fmt.Sprintf("%s is nil", pt))
 		}
 
