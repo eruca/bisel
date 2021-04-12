@@ -103,7 +103,7 @@ func generate_jwt(jwtSession Defaulter) (string, error) {
 func login_jwt(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Pairs, error) {
 	err := login(db, loginTabler, jwtSession)
 	if err != nil {
-		return nil, nil
+		return nil, err
 	}
 	token, err := generate_jwt(jwtSession)
 	if err != nil {
