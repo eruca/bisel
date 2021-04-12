@@ -63,7 +63,7 @@ func FromHttpRequest(router string, rder io.ReadCloser) *Request {
 	}
 
 	request := &Request{Type: router}
-	err := json.NewDecoder(rder).Decode(&request.Payload)
+	err := json.NewDecoder(rder).Decode(&request)
 	if err != nil && err != io.EOF {
 		panic(err)
 	}
