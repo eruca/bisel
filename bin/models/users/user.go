@@ -95,7 +95,7 @@ func (j *User) Query(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.
 		panic("参数不能为空")
 	}
 
-	btypes.QueryAssist(db.Gorm, j, pc, &total, &list)
+	btypes.QueryAssist(db.Gorm, j, pc, &total, &list, "password")
 	pairs.Add("total", total)
 	pairs.Add(tableName, list)
 
