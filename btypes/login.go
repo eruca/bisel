@@ -34,7 +34,7 @@ type Defaulter interface {
 }
 
 func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) error {
-	var result map[string]interface{}
+	result := map[string]interface{}{}
 
 	account := loginTabler.GetAccount()
 	password := loginTabler.GetPassword()
@@ -80,23 +80,13 @@ func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) error {
 	return nil
 }
 
-type Claims struct {
-	Session map[string]interface{}
-	jwt.StandardClaims
-}
-
 // 登录成功后产生的jwt返回给客户端
 // todo: 1. 写在header() 2.写在payload里
 func generate_jwt(jwtSession Defaulter) (string, error) {
 	sess := utils.Struct2Map(jwtSession)
+	sess["exp"] = time.Now().Add(expireDuration).Unix()
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256,
-		Claims{
-			Session: sess,
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Now().Add(expireDuration).Unix(),
-			},
-		})
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(sess))
 	return token.SignedString([]byte(salt))
 }
 
@@ -114,10 +104,8 @@ func login_jwt(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Pairs, er
 	return pairs, nil
 }
 
-func ParseToken(tokenString string, jwtSession interface{}) error {
-	token, err := jwt.ParseWithClaims(tokenString, &Claims{},
-		func(t *jwt.Token) (interface{}, error) { return []byte(salt), nil })
-
+func ParseToken(tokenString string, jwtSession Defaulter) error {
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) { return []byte(salt), nil })
 	if err != nil {
 		if ve, ok := err.(*jwt.ValidationError); ok {
 			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
@@ -132,8 +120,9 @@ func ParseToken(tokenString string, jwtSession interface{}) error {
 			}
 		}
 	}
-	if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-		err = mapstructure.Decode(claims.Session, jwtSession)
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		err = mapstructure.Decode(claims, jwtSession)
 		if err != nil {
 			panic(err)
 		}
