@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/eruca/bisel/bin/models/journal"
+	"github.com/eruca/bisel/bin/models/users"
 	"github.com/eruca/bisel/btypes"
 	"github.com/eruca/bisel/manager"
 	"github.com/gin-gonic/gin"
@@ -34,7 +35,7 @@ func main() {
 	db = db.Debug()
 
 	// Manager
-	manager := manager.New(db, btypes.NewCacher(), manager.ManagerConfig{}, &journal.Journal{})
+	manager := manager.New(db, btypes.NewCacher(), manager.ManagerConfig{}, &journal.Journal{}, &users.User{})
 	// 配置gin
 	engine := gin.Default()
 	engine.Use(cors())
