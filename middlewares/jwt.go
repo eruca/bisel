@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"bytes"
 	"strings"
 	"sync"
 
@@ -42,7 +41,7 @@ func parse(c *btypes.Context, token string, jwtSessionPool *sync.Pool) btypes.Pa
 	err := btypes.ParseToken(token, sess)
 	if err != nil {
 		c.Responder = btypes.BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
-		return btypes.PairStringer{Key: PairKeyJWT, Value: bytes.NewBufferString(err.Error())}
+		return btypes.PairStringer{Key: PairKeyJWT, Value: btypes.ValueString(err.Error())}
 	}
 	c.JwtSession = sess
 	c.Next()
