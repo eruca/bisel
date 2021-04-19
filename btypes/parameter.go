@@ -49,6 +49,12 @@ type ParamsContext struct {
 	Tabler
 }
 
+func ParamsContextForConnectter() ParamsContext {
+	qp := &QueryParams{}
+	qp.init()
+	return ParamsContext{ParamType: ParamQuery, QueryParams: qp}
+}
+
 func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) (pc ParamsContext) {
 	switch pt {
 	case ParamQuery:
