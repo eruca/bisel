@@ -160,12 +160,12 @@ func (qp *QueryParams) init() {
 // BuildCacheKey是按上面的结构体顺序输入，计算md5
 // 因为Hash是作为服务器返回给客户的数据，作为重复查询的话可以使用缓存的目的
 // todo: sort.Strings(qp.Conds) 提前到初始化时
-func (qp *QueryParams) BuildCacheKey(req *Request) string {
+func (qp *QueryParams) BuildCacheKey(reqType string) string {
 	sort.Strings(qp.Conds)
 	hasher := md5.New()
 	wr := bufio.NewWriter(hasher)
 	// 查询的类型必须放进去，要不然不同的查询都是同一结果
-	wr.WriteString(req.Type)
+	wr.WriteString(reqType)
 
 	if len(qp.Conds) > 0 {
 		wr.WriteString(strings.Join(qp.Conds, ""))
