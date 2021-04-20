@@ -35,7 +35,9 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 		cacheKey := params.BuildCacheKey(c.Request.Type)
 		value, ok := c.Cacher.Get(cacheKey)
 		if ok {
-			c.Responder = btypes.NewRawBytes(value)
+			rb := btypes.NewRawBytes(value)
+			rb.AddHash(cacheKey)
+			c.Responder = rb
 			return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString(value)}
 		} else {
 			noExistInCache(c, params)
