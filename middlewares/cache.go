@@ -69,10 +69,10 @@ func noExistInCache(c *btypes.Context, params *btypes.QueryParams) btypes.PairSt
 	}
 	// key是按照查询参数MD5计算出俩的hash值
 	key := params.BuildCacheKey(c.Request.Type)
-	// 设置缓存
-	c.Cacher.Set(c.Tabler.TableName(), key, c.Responder.JSON())
 	// 给返回的结果增加Hash值，下次请求带上这个哈希值，就可以使用缓存了
 	c.Responder.AddHash(key)
+	// 设置缓存
+	c.Cacher.Set(c.Tabler.TableName(), key, c.Responder.JSON())
 
 	return btypes.PairStringer{
 		Key:   PairKeyCache,
