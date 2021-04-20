@@ -158,5 +158,5 @@ func (rb *RawBytes) AddHash(hash string) {
 	buf.Write((*rb)[1:])
 
 	data := RawBytes(buf.Bytes())
-	rb = &data
+	*rb = data
 }
