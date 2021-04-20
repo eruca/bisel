@@ -21,7 +21,7 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 	if paramType == btypes.ParamUpsert || paramType == btypes.ParamDelete {
 		c.Cacher.Clear(c.TableName())
 		c.Next()
-		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("clear " + c.TableName())}
+		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("clear cache:" + c.TableName())}
 	}
 
 	params := c.Parameters.QueryParams
