@@ -138,10 +138,7 @@ func (resp *Response) Broadcast() bool {
 //* RawBytes 就是把所有数据都直接放进去
 type RawBytes []byte
 
-func NewRawBytes(data []byte) *RawBytes {
-	rb := RawBytes(data)
-	return &rb
-}
+func NewRawBytes(data []byte) RawBytes { return data }
 
 // JSON 实现Responser
 func (rb RawBytes) JSON() []byte { return rb }
@@ -149,14 +146,4 @@ func (rb RawBytes) JSON() []byte { return rb }
 // Broadcast ...
 func (rb RawBytes) Broadcast() bool { return false }
 
-func (rb *RawBytes) AddHash(hash string) {
-	var buf bytes.Buffer
-
-	// 先写入'{'
-	buf.WriteByte((*rb)[0])
-	buf.WriteString(fmt.Sprintf("%q:%q,", "hash", hash))
-	buf.Write((*rb)[1:])
-
-	data := RawBytes(buf.Bytes())
-	*rb = data
-}
+func (rb RawBytes) AddHash(string) {}
