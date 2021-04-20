@@ -2,6 +2,7 @@ package btypes
 
 import (
 	"encoding/json"
+	"log"
 )
 
 type Tabler interface {
@@ -35,5 +36,39 @@ func FromRequestPayload(rw json.RawMessage, tabler Tabler) Tabler {
 }
 
 type Connectter interface {
-	Connected(*DB, Cacher) Responder
+	Connected(*DB, Cacher, ConfigResponseType) Responder
+}
+
+func DoConnected(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, action string) Responder {
+	pc := ParamsContextForConnectter()
+
+	// key是按照查询参数MD5计算出俩的hash值
+	request_type := tabler.TableName() + "/" + action
+	key := pc.QueryParams.BuildCacheKey(request_type)
+	data, ok := cacher.Get(key)
+	if ok {
+		rb := NewRawBytes(data)
+		log.Println("Use Cache:", string(rb))
+		return rb
+	}
+
+	pairs, err := tabler.Query(db, &pc, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	resp := Response{
+		Type: cft(request_type, true),
+	}
+	resp.Add(pairs...)
+	// 给返回的结果增加Hash值，下次请求带上这个哈希值，就可以使用缓存了
+	resp.AddHash(key)
+
+	// 进入缓存系统
+	// 设置缓存
+	cacher.Set(tabler.TableName(), key, resp.JSON())
+
+	log.Println("Query Database:", string(resp.JSON()))
+
+	return &resp
 }

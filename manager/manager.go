@@ -47,7 +47,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		log.Println("Connected now, will send some data to client")
 		manager.Connected(send)
 		if afterConnected != nil {
-			resp := afterConnected.Connected(manager.db, manager.cacher)
+			resp := afterConnected.Connected(manager.db, manager.cacher, manager.Config.ConfigResponseType)
 			send <- resp.JSON()
 		}
 	}
@@ -120,7 +120,7 @@ func (manager *Manager) TakeAction(clientWriter io.Writer, req *btypes.Request,
 func (manager *Manager) Connected(c chan<- []byte) {
 	for _, tabler := range manager.tablers {
 		if connecter, ok := tabler.(btypes.Connectter); ok {
-			responder := connecter.Connected(manager.db, manager.cacher)
+			responder := connecter.Connected(manager.db, manager.cacher, manager.Config.ConfigResponseType)
 			c <- responder.JSON()
 		}
 	}
