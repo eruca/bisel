@@ -45,7 +45,7 @@ func QueryAssist(db *gorm.DB, tabler Tabler, pc *ParamsContext, total *int64, li
 
 	if len(pc.QueryParams.Conds) > 0 {
 		// todo 还需对Conds重新设计
-		tx = tx.Where(strings.Join(pc.QueryParams.Conds, ""))
+		tx = tx.Where(strings.Join(pc.QueryParams.Conds, " AND "))
 	}
 	tx.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE deleted_at IS NULL", tableName)).Scan(total)
 
