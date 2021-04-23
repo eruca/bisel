@@ -58,3 +58,26 @@ func QueryAssist(db *gorm.DB, tabler Tabler, pc *ParamsContext, total *int64, li
 		panic(err)
 	}
 }
+
+func SearchAssist(db *gorm.DB, tabler Tabler, pc *ParamsContext, total *int64, list interface{}, omits ...string) {
+	tx := db.Begin()
+	defer tx.Commit()
+
+	tableName := tabler.TableName()
+	tx = tx.Table(tableName)
+
+	if len(pc.QueryParams.Conds) > 0 {
+		// todo 还需对Conds重新设计
+		tx = tx.Where(strings.Join(pc.QueryParams.Conds, " AND "))
+	}
+
+	if err := tx.Where("1 = 1").Order(pc.QueryParams.Orderby).
+		Offset(int(pc.QueryParams.Offset)).
+		Limit(int(pc.QueryParams.Size)).
+		Omit(omits...).
+		Count(total).
+		Find(list).Error; err != nil {
+		tx.Rollback()
+		panic(err)
+	}
+}
