@@ -61,8 +61,6 @@ func DoConnected(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, a
 		Type: cft(request_type, true),
 	}
 	resp.Add(pairs...)
-	// 给返回的结果增加Hash值，下次请求带上这个哈希值，就可以使用缓存了
-	resp.AddHash(key)
 
 	// 进入缓存系统
 	// 设置缓存

@@ -31,31 +31,13 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 		return noExistInCache(c, params)
 	}
 
-	// 发送过来的请求没有Hash
-	if params.Hash == "" {
-		cacheKey := params.BuildCacheKey(c.Request.Type)
-		value, ok := c.Cacher.Get(cacheKey)
-		if ok {
-			c.Responder = btypes.NewRawBytes(value)
-			return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString(value)}
-		} else {
-			return noExistInCache(c, params)
-		}
+	cacheKey := params.BuildCacheKey(c.Request.Type)
+	value, ok := c.Cacher.Get(cacheKey)
+	if ok {
+		c.Responder = btypes.NewRawBytes(value)
+		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString(value)}
 	}
-
-	// 发送过来的数据有Hash
-	_, ok := c.Cacher.Get(params.Hash)
-	// 如果客户端请求有Hash，可是在缓存中无法找到
-	// 表示缓存已经被删除
-	if !ok {
-		return noExistInCache(c, params)
-	}
-
-	// 如果缓存有数据，就直接返回给客户端了
-	// 那么后面的actions都不执行了，如果有想要执行的action必须在缓存之前
-	//! 查询了缓存后，不需要把Hash再一次给客户端，原来的Hash值还是有效的, 也不需要给数据，因为客户端有了
-	c.Responder = btypes.BuildFromRequest(c.ConfigResponseType, c.Request, true)
-	return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("response without payload")}
+	return noExistInCache(c, params)
 }
 
 func noExistInCache(c *btypes.Context, params *btypes.QueryParams) btypes.PairStringer {
@@ -67,8 +49,6 @@ func noExistInCache(c *btypes.Context, params *btypes.QueryParams) btypes.PairSt
 	}
 	// key是按照查询参数MD5计算出俩的hash值
 	key := params.BuildCacheKey(c.Request.Type)
-	// 给返回的结果增加Hash值，下次请求带上这个哈希值，就可以使用缓存了
-	c.Responder.AddHash(key)
 	// 设置缓存
 	c.Cacher.Set(c.Tabler.TableName(), key, c.Responder.JSON())
 

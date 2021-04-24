@@ -9,7 +9,6 @@ import (
 
 func TestRawByteAddHash(t *testing.T) {
 	rb := btypes.NewRawBytes([]byte("{}"))
-	rb.AddHash("xx")
 
 	assert.Equal(t, string("{}"), string(rb.JSON()))
 }

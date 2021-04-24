@@ -74,7 +74,6 @@ func FromHttpRequest(router string, rder io.ReadCloser) *Request {
 //* Responder 是服务器对客户端的响应的接口
 type Responder interface {
 	JSON() []byte
-	AddHash(string)
 	Broadcast() bool
 }
 
@@ -100,14 +99,6 @@ func BuildErrorResposeFromRequest(responseType ConfigResponseType, req *Request,
 		Type:    responseType(req.Type, false),
 		UUID:    req.UUID,
 		Payload: map[string]interface{}{"err": err.Error()},
-	}
-}
-
-func (resp *Response) AddHash(value string) {
-	if resp.Payload == nil {
-		resp.Payload = map[string]interface{}{"hash": value}
-	} else {
-		resp.Payload["hash"] = value
 	}
 }
 
@@ -145,5 +136,3 @@ func (rb RawBytes) JSON() []byte { return rb }
 
 // Broadcast ...
 func (rb RawBytes) Broadcast() bool { return false }
-
-func (rb RawBytes) AddHash(string) {}
