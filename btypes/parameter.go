@@ -143,7 +143,6 @@ type QueryParams struct {
 	Size           uint64   `json:"size,omitempty"`
 	Orderby        string   `json:"orderby,omitempty"`
 	ReforceUpdated bool     `json:"reforce_updated,omitempty"` // 强制刷新，查询数据库
-	Hash           string   `json:"hash,omitempty"`
 }
 
 func (qp *QueryParams) Type() ParamType {
