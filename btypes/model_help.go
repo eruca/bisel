@@ -3,6 +3,7 @@ package btypes
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"gorm.io/gorm"
@@ -35,6 +36,37 @@ func (ns *NullString) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func QueryAssist(db *gorm.DB, tabler Tabler, pc *ParamsContext, total *int64, list interface{}, omits ...string) {
+	tx := db.Begin()
+	defer tx.Commit()
+
+	tableName := tabler.TableName()
+	tx = tx.Table(tableName)
+
+	// 所有where合在一起的从句
+	var conditions string
+	if len(pc.QueryParams.Conds) > 0 {
+		// todo 还需对Conds重新设计
+		conditions = strings.Join(pc.QueryParams.Conds, " AND ")
+		tx = tx.Where(conditions)
+	}
+
+	if conditions != "" {
+		tx.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE deleted_at IS NULL AND %s", tableName, conditions)).Scan(total)
+	} else {
+		tx.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE deleted_at IS NULL", tableName)).Scan(total)
+	}
+
+	if err := tx.Order(pc.QueryParams.Orderby).
+		Offset(int(pc.QueryParams.Offset)).
+		Limit(int(pc.QueryParams.Size)).
+		Omit(omits...).
+		Find(list).Error; err != nil {
+		tx.Rollback()
+		panic(err)
+	}
+}
+
 // func QueryAssist(db *gorm.DB, tabler Tabler, pc *ParamsContext, total *int64, list interface{}, omits ...string) {
 // 	tx := db.Begin()
 // 	defer tx.Commit()
@@ -46,37 +78,14 @@ func (ns *NullString) UnmarshalJSON(data []byte) error {
 // 		// todo 还需对Conds重新设计
 // 		tx = tx.Where(strings.Join(pc.QueryParams.Conds, " AND "))
 // 	}
-// 	tx.Raw(fmt.Sprintf("SELECT COUNT(*) FROM %s WHERE deleted_at IS NULL", tableName)).Scan(total)
 
 // 	if err := tx.Where("1 = 1").Order(pc.QueryParams.Orderby).
 // 		Offset(int(pc.QueryParams.Offset)).
 // 		Limit(int(pc.QueryParams.Size)).
 // 		Omit(omits...).
+// 		Count(total).
 // 		Find(list).Error; err != nil {
 // 		tx.Rollback()
 // 		panic(err)
 // 	}
 // }
-
-func QueryAssist(db *gorm.DB, tabler Tabler, pc *ParamsContext, total *int64, list interface{}, omits ...string) {
-	tx := db.Begin()
-	defer tx.Commit()
-
-	tableName := tabler.TableName()
-	tx = tx.Table(tableName)
-
-	if len(pc.QueryParams.Conds) > 0 {
-		// todo 还需对Conds重新设计
-		tx = tx.Where(strings.Join(pc.QueryParams.Conds, " AND "))
-	}
-
-	if err := tx.Where("1 = 1").Order(pc.QueryParams.Orderby).
-		Offset(int(pc.QueryParams.Offset)).
-		Limit(int(pc.QueryParams.Size)).
-		Omit(omits...).
-		Count(total).
-		Find(list).Error; err != nil {
-		tx.Rollback()
-		panic(err)
-	}
-}
