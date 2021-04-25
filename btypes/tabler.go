@@ -39,8 +39,8 @@ type Connectter interface {
 	Connected(*DB, Cacher, ConfigResponseType) Responder
 }
 
-func DoConnected(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, action string) Responder {
-	pc := ParamsContextForConnectter()
+func DoConnected(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, action string, fullSize bool) Responder {
+	pc := ParamsContextForConnectter(fullSize)
 
 	// key是按照查询参数MD5计算出俩的hash值
 	request_type := tabler.TableName() + "/" + action

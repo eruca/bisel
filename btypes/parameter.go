@@ -49,9 +49,9 @@ type ParamsContext struct {
 	Tabler
 }
 
-func ParamsContextForConnectter() ParamsContext {
+func ParamsContextForConnectter(fullSize bool) ParamsContext {
 	qp := &QueryParams{}
-	qp.init()
+	qp.init(fullSize)
 	return ParamsContext{ParamType: ParamQuery, QueryParams: qp}
 }
 
@@ -90,7 +90,7 @@ func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) (pc 
 func (pc *ParamsContext) init() {
 	switch pc.ParamType {
 	case ParamQuery:
-		pc.QueryParams.init()
+		pc.QueryParams.init(false)
 	}
 }
 
@@ -140,7 +140,7 @@ func (pc *ParamsContext) Do(db *DB, tabler Tabler, jwtSession Defaulter) (Pairs,
 type QueryParams struct {
 	Conds          []string `json:"conds,omitempty"` // 限制条件
 	Offset         uint64   `json:"offset,omitempty"`
-	Size           uint64   `json:"size,omitempty"`
+	Size           int64    `json:"size,omitempty"`
 	Orderby        string   `json:"orderby,omitempty"`
 	ReforceUpdated bool     `json:"reforce_updated,omitempty"` // 强制刷新，查询数据库
 }
@@ -150,13 +150,19 @@ func (qp *QueryParams) Type() ParamType {
 }
 
 // Init 中的list目的是获取外部指针，接收内部产生的数据作为返回
-func (qp *QueryParams) init() {
+func (qp *QueryParams) init(fullSize bool) {
 	if qp.Conds != nil {
 		sort.Strings(qp.Conds)
 	}
-	if qp.Size == 0 {
-		qp.Size = DEFAULT_QUERY_SIZE
+
+	if fullSize {
+		qp.Size = -1
+	} else {
+		if qp.Size == 0 {
+			qp.Size = DEFAULT_QUERY_SIZE
+		}
 	}
+
 	if qp.Orderby == "" {
 		qp.Orderby = "id desc"
 	}
@@ -186,7 +192,7 @@ func (qp *QueryParams) BuildCacheKey(reqType string) string {
 	for i := 0; i < binary.MaxVarintLen64; i++ {
 		buf[i] = 0
 	}
-	binary.PutUvarint(buf, qp.Size)
+	binary.PutVarint(buf, qp.Size)
 	wr.Write(buf)
 
 	wr.WriteString(qp.Orderby)
