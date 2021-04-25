@@ -33,7 +33,7 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 
 	cacheKey := params.BuildCacheKey(c.Request.Type)
 	if value, ok := c.Cacher.Get(cacheKey); ok {
-		c.Responder = btypes.NewRawBytes(value)
+		c.Responder = btypes.NewRawResponse(c.ConfigResponseType, c.Request, value)
 		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString(value)}
 	}
 	return noExistInCache(c, params)
@@ -49,7 +49,8 @@ func noExistInCache(c *btypes.Context, params *btypes.QueryParams) btypes.PairSt
 	// key是按照查询参数MD5计算出俩的hash值
 	key := params.BuildCacheKey(c.Request.Type)
 	// 设置缓存
-	c.Cacher.Set(c.Tabler.TableName(), key, c.Responder.JSON())
+	// 只能缓存payload,如果缓存responder，则会加入uuid
+	c.Cacher.Set(c.Tabler.TableName(), key, c.Responder.CachePayload())
 
 	return btypes.PairStringer{
 		Key:   PairKeyCache,

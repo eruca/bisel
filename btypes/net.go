@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	_ Responder = (*RawBytes)(nil)
+	_ Responder = (*RawResponse)(nil)
 	_ Responder = (*Response)(nil)
 )
 
@@ -74,6 +74,7 @@ func FromHttpRequest(router string, rder io.ReadCloser) *Request {
 //* Responder 是服务器对客户端的响应的接口
 type Responder interface {
 	JSON() []byte
+	CachePayload() []byte
 	Broadcast() bool
 }
 
@@ -121,18 +122,46 @@ func (resp *Response) JSON() []byte {
 	return data
 }
 
+func (resp *Response) CachePayload() []byte {
+	data, err := json.Marshal(resp.Payload)
+	if err != nil {
+		panic(err)
+	}
+	return data
+}
+
 // Broadcast 实现Responser
 func (resp *Response) Broadcast() bool {
 	return resp.broadcast
 }
 
-//* RawBytes 就是把所有数据都直接放进去
-type RawBytes []byte
+//* RawResponse 就是把所有数据都直接放进去
+type RawResponse struct {
+	Type    string          `json:"type,omitempty"`
+	Payload json.RawMessage `json:"payload"` // payload就是没值也要有{}
+	UUID    string          `json:"uuid,omitempty"`
+}
 
-func NewRawBytes(data []byte) RawBytes { return data }
+func NewRawResponse(crt ConfigResponseType, req *Request, data []byte) *RawResponse {
+	return &RawResponse{
+		Type:    crt(req.Type, true),
+		Payload: data,
+		UUID:    req.UUID,
+	}
+}
 
 // JSON 实现Responser
-func (rb RawBytes) JSON() []byte { return rb }
+func (rr RawResponse) JSON() []byte {
+	data, err := json.Marshal(rr)
+	if err != nil {
+		panic(err)
+	}
+	return data
+}
+
+func (rr RawResponse) CachePayload() []byte {
+	return rr.Payload
+}
 
 // Broadcast ...
-func (rb RawBytes) Broadcast() bool { return false }
+func (rr RawResponse) Broadcast() bool { return false }

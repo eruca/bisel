@@ -47,8 +47,8 @@ func DoConnected(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, a
 	key := pc.QueryParams.BuildCacheKey(request_type)
 	data, ok := cacher.Get(key)
 	if ok {
-		rb := NewRawBytes(data)
-		log.Println("Use Cache:", string(rb))
+		rb := NewRawResponse(cft, &Request{Type: request_type}, data)
+		log.Println("Use Cache:", string(rb.JSON()))
 		return rb
 	}
 
