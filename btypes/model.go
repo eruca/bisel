@@ -1,7 +1,6 @@
 package btypes
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -25,17 +24,10 @@ func (model *GormModel) RowID() uint {
 // insert 插入新数据时有可能会违反独一约束，则需要处理该类错误，需在tabler内部处理
 func (model *GormModel) insert(db *DB, tabler Tabler) error {
 	err := db.Gorm.Create(tabler).Error
-	if err != nil {
-		e := err.Error()
-		for _, group := range ErrGroup {
-			if strings.Contains(e, group.Key) {
-				s := strings.TrimSpace(strings.TrimPrefix(e, group.Key))
-				return fmt.Errorf(group.Value.String(), s)
-			}
-		}
-		panic(err)
+	if strings.Contains(err.Error(), ErrStringUniqueConstrait) {
+		return err
 	}
-	return nil
+	panic(err)
 }
 
 // update 数据，直接Save，保存所有数据，同时因为如果version不一致就返回0行，所以是乐观锁错误
