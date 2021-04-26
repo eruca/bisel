@@ -64,7 +64,7 @@ func DoConnected(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, a
 
 	// 进入缓存系统
 	// 设置缓存
-	cacher.Set(tabler.TableName(), key, resp.JSON())
+	cacher.Set(tabler.TableName(), key, resp.CachePayload())
 
 	log.Println("Query Database:", string(resp.JSON()))
 
