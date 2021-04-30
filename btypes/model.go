@@ -24,6 +24,9 @@ func (model *GormModel) RowID() uint {
 // insert 插入新数据时有可能会违反独一约束，则需要处理该类错误，需在tabler内部处理
 func (model *GormModel) insert(db *DB, tabler Tabler) error {
 	err := db.Gorm.Create(tabler).Error
+	if err == nil {
+		return nil
+	}
 	if strings.Contains(err.Error(), ErrStringUniqueConstrait) {
 		return err
 	}
