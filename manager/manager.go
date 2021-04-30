@@ -96,8 +96,6 @@ func (manager *Manager) StartTasks(tasks ...btypes.Task) {
 func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
 	req *btypes.Request, httpReq *http.Request, connType btypes.ConnectionType) (err error) {
 
-	var respReader io.Reader
-
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.Config.ConfigResponseType, connType)
 		// 在这里会对paramContext进行初始化
@@ -109,19 +107,26 @@ func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
 		if ctx.Responder == nil {
 			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
 		}
-		respReader = btypes.ResponderToReader(ctx.Responder)
+
+		respReader := btypes.ResponderToReader(ctx.Responder)
+		_, err = io.Copy(clientWriter, respReader)
+		if err != nil {
+			panic(err)
+		}
+
 		if ctx.Responder.Broadcast() {
 			if connType == btypes.HTTP {
 				panic(`http 连接 不能广播`)
 			}
-			_, err = io.Copy(broadcastWriter, respReader)
-		} else {
-			_, err = io.Copy(clientWriter, respReader)
+			ctx.Responder.RemoveUUID()
+			ctx.Responder.Silence()
+			_, err = io.Copy(broadcastWriter, btypes.ResponderToReader(ctx.Responder))
 		}
+
 		ctx.Finish()
 	} else {
 		resp := btypes.BuildErrorResposeFromRequest(manager.Config.ConfigResponseType, req, fmt.Errorf("%q router not implemented yet", req.Type))
-		respReader = btypes.ResponderToReader(resp)
+		respReader := btypes.ResponderToReader(resp)
 		_, err = io.Copy(clientWriter, respReader)
 	}
 
