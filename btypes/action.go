@@ -19,25 +19,24 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 
 		c.AddActions(func(c *Context) PairStringer {
 			var (
-				response  *Response
-				pairs     Pairs
-				broadcast bool
-				err       error
+				response *Response
+				result   Result
+				err      error
 			)
 
 			// ParamLogin 是构造jwtSession
 			// 其他是使用jwtSession
 			if pt == ParamLogin {
-				pairs, broadcast, err = pc.Do(c.DB, tabler, jwtSession)
+				result, err = pc.Do(c.DB, tabler, jwtSession)
 			} else {
-				pairs, broadcast, err = pc.Do(c.DB, tabler, c.JwtSession)
+				result, err = pc.Do(c.DB, tabler, c.JwtSession)
 			}
 
 			if err != nil {
 				response = BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
 			} else {
-				response = BuildFromRequest(c.ConfigResponseType, c.Request, true, broadcast)
-				response.Add(pairs...)
+				response = BuildFromRequest(c.ConfigResponseType, c.Request, true, result.Broadcast)
+				response.Add(result.Payloads...)
 			}
 			c.Responder = response
 

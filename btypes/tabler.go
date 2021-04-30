@@ -5,6 +5,11 @@ import (
 	"log"
 )
 
+type Result struct {
+	Payloads  Pairs
+	Broadcast bool
+}
+
 type Tabler interface {
 	New() Tabler
 	FromRequest(json.RawMessage) Tabler
@@ -18,13 +23,13 @@ type Tabler interface {
 	// err, false: 意外的错误
 	Dispose(error) (bool, error)
 
-	Upsert(*DB, *ParamsContext, Defaulter) (Pairs, bool, error)
+	Upsert(*DB, *ParamsContext, Defaulter) (Result, error)
 	// Query 对于该表进行查询
 	// @params: 代表查询的参数
 	// return string: 代表该返回在Payload里的key
 	// return interface{}: 代表该返回key对应的结果
-	Query(*DB, *ParamsContext, Defaulter) (Pairs, bool, error)
-	Delete(*DB, *ParamsContext, Defaulter) (Pairs, bool, error)
+	Query(*DB, *ParamsContext, Defaulter) (Result, error)
+	Delete(*DB, *ParamsContext, Defaulter) (Result, error)
 }
 
 func FromRequestPayload(rw json.RawMessage, tabler Tabler) Tabler {
@@ -52,16 +57,16 @@ func DoConnected(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, a
 		return rb
 	}
 
-	pairs, broadcast, err := tabler.Query(db, &pc, nil)
+	result, err := tabler.Query(db, &pc, nil)
 	if err != nil {
 		panic(err)
 	}
 
 	resp := Response{
 		Type:      cft(request_type, true),
-		broadcast: broadcast,
+		broadcast: result.Broadcast,
 	}
-	resp.Add(pairs...)
+	resp.Add(result.Payloads...)
 
 	// 进入缓存系统
 	// 设置缓存

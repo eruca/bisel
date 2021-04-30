@@ -46,17 +46,17 @@ func (j *Journal) MustAutoMigrate(db *btypes.DB) {
 
 func (j *Journal) TableName() string { return tableName }
 
-func (j *Journal) Upsert(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (pairs btypes.Pairs, broadcast bool, err error) {
+func (j *Journal) Upsert(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (result btypes.Result, err error) {
 	var inserted bool
 	inserted, err = pc.Tabler.Model().Upsert(db, pc.Tabler)
 	if err != nil {
-		return nil, false, err
+		return
 	}
 
 	if inserted {
-		pairs.Add("msg", "添加成功")
+		result.Payloads.Add("msg", "添加成功")
 	} else {
-		pairs.Add("msg", "修改成功")
+		result.Payloads.Add("msg", "修改成功")
 	}
 	return
 }
@@ -65,30 +65,31 @@ func (j *Journal) Upsert(db *btypes.DB, pc *btypes.ParamsContext, jwtSession bty
 // @params: 代表查询的参数
 // return string: 代表该返回在Payload里的key
 // return interface{}: 代表该返回key对应的结果
-func (j *Journal) Query(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (pairs btypes.Pairs, broadcast bool, err error) {
-	var total int64
-	var list []*Journal
+func (j *Journal) Query(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (result btypes.Result, err error) {
+	var (
+		total int64
+		list  []*Journal
+	)
 
 	if pc.QueryParams == nil {
 		panic("参数不能为空")
 	}
 
 	btypes.QueryAssist(db.Gorm, j, pc, &total, &list)
-	pairs.Add("total", total)
-	pairs.Add(tableName, list)
+	result.Payloads.Add("total", total)
+	result.Payloads.Add(tableName, list)
 
 	return
 }
 
-func (j *Journal) Delete(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (pairs btypes.Pairs, broadcast bool, err error) {
+func (j *Journal) Delete(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (result btypes.Result, err error) {
 	log.Printf("delete %#v", pc.Tabler)
 	var n int64
 	n, err = pc.Tabler.Model().SoftDelete(db, pc.Tabler)
 	if err == nil {
-		pairs.Add("msg", fmt.Sprintf("成功删除[%d]", n))
-		return
+		result.Payloads.Add("msg", fmt.Sprintf("成功删除[%d]", n))
 	}
-	return nil, false, err
+	return
 }
 
 func (j *Journal) Dispose(err error) (bool, error) {

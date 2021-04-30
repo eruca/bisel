@@ -90,10 +90,10 @@ func generate_jwt(jwtSession Defaulter) (string, error) {
 	return token.SignedString([]byte(salt))
 }
 
-func login_jwt(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Pairs, bool, error) {
+func login_jwt(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Result, error) {
 	err := login(db, loginTabler, jwtSession)
 	if err != nil {
-		return nil, false, err
+		return Result{nil, false}, err
 	}
 	token, err := generate_jwt(jwtSession)
 	if err != nil {
@@ -101,7 +101,7 @@ func login_jwt(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Pairs, bo
 	}
 	// todo: 是返回给Header还是Payload
 	pairs := Pairs{Pair{Key: "token", Value: token}}
-	return pairs, false, nil
+	return Result{pairs, false}, nil
 }
 
 func ParseToken(tokenString string, jwtSession Defaulter) error {
