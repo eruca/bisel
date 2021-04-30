@@ -70,6 +70,7 @@ type Responder interface {
 	JSON() []byte
 	CachePayload() []byte
 	Broadcast() bool
+	RemoveUUID()
 }
 
 //* Response 这个是从服务器数据库查询到数据，返回给客户端的响应结果
@@ -131,6 +132,10 @@ func (resp *Response) Broadcast() bool {
 	return resp.broadcast
 }
 
+func (resp *Response) RemoveUUID() {
+	resp.UUID = ""
+}
+
 //* RawResponse 就是把所有数据都直接放进去
 type RawResponse struct {
 	Type    string          `json:"type,omitempty"`
@@ -161,3 +166,7 @@ func (rr RawResponse) CachePayload() []byte {
 
 // Broadcast ...
 func (rr RawResponse) Broadcast() bool { return false }
+
+func (resp *RawResponse) RemoveUUID() {
+	resp.UUID = ""
+}
