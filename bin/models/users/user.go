@@ -62,11 +62,11 @@ func (j *User) MustAutoMigrate(db *btypes.DB) {
 
 func (j *User) TableName() string { return tableName }
 
-func (j *User) Upsert(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (pairs btypes.Pairs, err error) {
+func (j *User) Upsert(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (pairs btypes.Pairs, broadcast bool, err error) {
 	var inserted bool
 	inserted, err = pc.Tabler.Model().Upsert(db, pc.Tabler)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if inserted {
@@ -81,7 +81,7 @@ func (j *User) Upsert(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes
 // @params: 代表查询的参数
 // return string: 代表该返回在Payload里的key
 // return interface{}: 代表该返回key对应的结果
-func (j *User) Query(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (pairs btypes.Pairs, err error) {
+func (j *User) Query(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (pairs btypes.Pairs, broadcast bool, err error) {
 	var total int64
 	var list []*User
 
@@ -102,7 +102,7 @@ func (j *User) Query(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.
 	return
 }
 
-func (j *User) Delete(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (pairs btypes.Pairs, err error) {
+func (j *User) Delete(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes.Defaulter) (pairs btypes.Pairs, broadcast bool, err error) {
 	log.Printf("delete %#v", pc.Tabler)
 	var n int64
 	n, err = pc.Tabler.Model().SoftDelete(db, pc.Tabler)
@@ -110,7 +110,7 @@ func (j *User) Delete(db *btypes.DB, pc *btypes.ParamsContext, jwtSession btypes
 		pairs.Add("msg", fmt.Sprintf("成功删除[%d]", n))
 		return
 	}
-	return nil, err
+	return nil, false, err
 }
 
 func (j *User) Dispose(err error) (bool, error) {

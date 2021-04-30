@@ -18,13 +18,13 @@ type Tabler interface {
 	// err, false: 意外的错误
 	Dispose(error) (bool, error)
 
-	Upsert(*DB, *ParamsContext, Defaulter) (Pairs, error)
+	Upsert(*DB, *ParamsContext, Defaulter) (Pairs, bool, error)
 	// Query 对于该表进行查询
 	// @params: 代表查询的参数
 	// return string: 代表该返回在Payload里的key
 	// return interface{}: 代表该返回key对应的结果
-	Query(*DB, *ParamsContext, Defaulter) (Pairs, error)
-	Delete(*DB, *ParamsContext, Defaulter) (Pairs, error)
+	Query(*DB, *ParamsContext, Defaulter) (Pairs, bool, error)
+	Delete(*DB, *ParamsContext, Defaulter) (Pairs, bool, error)
 }
 
 func FromRequestPayload(rw json.RawMessage, tabler Tabler) Tabler {
@@ -52,13 +52,14 @@ func DoConnected(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, a
 		return rb
 	}
 
-	pairs, err := tabler.Query(db, &pc, nil)
+	pairs, broadcast, err := tabler.Query(db, &pc, nil)
 	if err != nil {
 		panic(err)
 	}
 
 	resp := Response{
-		Type: cft(request_type, true),
+		Type:      cft(request_type, true),
+		broadcast: broadcast,
 	}
 	resp.Add(pairs...)
 

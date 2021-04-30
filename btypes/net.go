@@ -87,19 +87,21 @@ type Response struct {
 }
 
 // BuildFromRequest 从req，success构建
-func BuildFromRequest(responseType ConfigResponseType, req *Request, success bool) *Response {
+func BuildFromRequest(responseType ConfigResponseType, req *Request, success, broadcast bool) *Response {
 	return &Response{
-		Type: responseType(req.Type, success),
-		UUID: req.UUID,
+		Type:      responseType(req.Type, success),
+		UUID:      req.UUID,
+		broadcast: broadcast,
 	}
 }
 
 // 如果发生错误就直接生产错误的Response
 func BuildErrorResposeFromRequest(responseType ConfigResponseType, req *Request, err error) *Response {
 	return &Response{
-		Type:    responseType(req.Type, false),
-		UUID:    req.UUID,
-		Payload: map[string]interface{}{"err": err.Error()},
+		Type:      responseType(req.Type, false),
+		UUID:      req.UUID,
+		Payload:   map[string]interface{}{"err": err.Error()},
+		broadcast: false,
 	}
 }
 
