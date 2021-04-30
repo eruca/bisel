@@ -102,6 +102,8 @@ func (manager *Manager) TakeAction(clientWriter io.Writer, req *btypes.Request,
 		// 在这里会对paramContext进行初始化
 		contextConfig(ctx)
 
+		// StartWorkFlow 会启动WorkFlow
+		// 并且会走完ctx.Executor,并且会生成一个Responder
 		ctx.StartWorkFlow()
 		if ctx.Responder == nil {
 			panic("需要返回一个结果给客户端")
