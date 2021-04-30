@@ -90,7 +90,7 @@ func generate_jwt(jwtSession Defaulter) (string, error) {
 	return token.SignedString([]byte(salt))
 }
 
-func login_jwt(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Result, error) {
+func loginJWT(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Result, error) {
 	err := login(db, loginTabler, jwtSession)
 	if err != nil {
 		return Result{nil, false}, err

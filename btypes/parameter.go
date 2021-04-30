@@ -129,7 +129,7 @@ func (pc *ParamsContext) Do(db *DB, tabler Tabler, jwtSession Defaulter) (Result
 		if !ok {
 			panic(fmt.Sprintf("%s 没有实现 LoginTabler", pc.TableName()))
 		}
-		return login_jwt(db, loginTabler, jwtSession)
+		return loginJWT(db, loginTabler, jwtSession)
 
 	default:
 		panic("should not happened")
