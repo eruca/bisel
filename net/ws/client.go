@@ -52,7 +52,7 @@ func (c *Client) readPump(hub *Hub, fn Process) {
 			break
 		}
 
-		fn(c.send, message)
+		fn(c.send, hub.broadcast, message)
 	}
 }
 
