@@ -106,7 +106,7 @@ func (manager *Manager) TakeAction(clientWriter io.Writer, req *btypes.Request,
 		// 并且会走完ctx.Executor,并且会生成一个Responder
 		ctx.StartWorkFlow()
 		if ctx.Responder == nil {
-			panic("需要返回一个结果给客户端")
+			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
 		}
 		respReader = btypes.ResponderToReader(ctx.Responder)
 		ctx.Finish()
