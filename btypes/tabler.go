@@ -5,6 +5,9 @@ import (
 	"log"
 )
 
+// Result 代表增删查修的结果
+// Payloads键值对是返回给客户端的数据
+// Broadcast 代表是否进行广播
 type Result struct {
 	Payloads  Pairs
 	Broadcast bool
