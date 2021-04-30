@@ -2,10 +2,15 @@ package ws
 
 import "log"
 
+type BroadcastRequest struct {
+	Data     []byte
+	Producer chan []byte
+}
+
 // Hub 代表所有Client的汇集地
 type Hub struct {
 	clients    map[*Client]struct{}
-	broadcast  chan []byte
+	broadcast  chan BroadcastRequest
 	register   chan *Client
 	unregister chan *Client
 }
@@ -13,7 +18,7 @@ type Hub struct {
 func newHub() *Hub {
 	hub := &Hub{
 		clients:    make(map[*Client]struct{}),
-		broadcast:  make(chan []byte),
+		broadcast:  make(chan BroadcastRequest),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 	}
@@ -32,10 +37,12 @@ func (h *Hub) run() {
 				delete(h.clients, client)
 				close(client.send)
 			}
-		case data := <-h.broadcast:
+		case req := <-h.broadcast:
 			log.Println("广播服务")
 			for client := range h.clients {
-				client.send <- data
+				if client.send != req.Producer {
+					client.send <- req.Data
+				}
 			}
 		}
 	}

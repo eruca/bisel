@@ -10,7 +10,7 @@ import (
 type ProcessMixHttpRequest func(req *http.Request) Process
 
 // Process 是外部函数需要接收websocket的广播、发送、消息, req 代表连接的状态
-type Process func(send, broadcast chan<- []byte, msg []byte)
+type Process func(send chan []byte, broadcast chan BroadcastRequest, msg []byte)
 
 // Connected 代表如果连接一旦建立，就通过send向客户端发送数据
 type Connected func(send chan<- []byte)

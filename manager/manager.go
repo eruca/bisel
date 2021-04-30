@@ -36,10 +36,10 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 
 	// 构建读入信息后的处理函数
 	processMixHttpRequest := func(httpReq *http.Request) ws.Process {
-		return func(send, broadcast chan<- []byte, msg []byte) {
+		return func(send chan []byte, broadcast chan ws.BroadcastRequest, msg []byte) {
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
 			log.Printf("websocket request from client: %-v\n", req)
-			manager.TakeAction(btypes.NewChanWriter(send), btypes.NewChanWriter(broadcast), req, httpReq, btypes.WEBSOCKET)
+			manager.TakeAction(btypes.NewChanWriter(send), btypes.NewBroadcastChanWriter(broadcast, send), req, httpReq, btypes.WEBSOCKET)
 		}
 	}
 	// 连接成功后马上发送的数据
