@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 )
 
 var (
@@ -57,11 +56,6 @@ func NewRequest(msg []byte) *Request {
 // http.router => TYPE
 // @body => Payload, 如果是query,则可以使用null, 其他不行，所以不能再这里设置
 func FromHttpRequest(router string, rder io.ReadCloser) *Request {
-	if rder == nil {
-		log.Println("rder is nil")
-		panic("rder == nil")
-	}
-
 	request := &Request{Type: router}
 	err := json.NewDecoder(rder).Decode(&request)
 	if err != nil && err != io.EOF {
