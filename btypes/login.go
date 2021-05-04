@@ -33,46 +33,37 @@ type Defaulter interface {
 	Default() Defaulter
 }
 
-func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (err error) {
-	result := map[string]interface{}{}
+func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Tabler, error) {
+	loginer := loginTabler.New().(LoginTabler)
 
 	account := loginTabler.GetAccount()
 	password := loginTabler.GetPassword()
 
-	if err = db.Gorm.
+	if err := db.Gorm.
 		Model(loginTabler).
 		Where(fmt.Sprintf("%s = ?", account.Key), account.Value).
-		First(&result).Error; err != nil {
+		First(loginer).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrAccountNotExistOrPasswordNotCorrect
+			return nil, ErrAccountNotExistOrPasswordNotCorrect
 		}
 		panic(err)
 	}
 
-	passwordFromDb, ok := result[password.Key]
-	if !ok {
-		panic(fmt.Sprintf("%q 不存在于 数据库:%q中", password.Key, loginTabler.TableName()))
-	}
-	pswdFromDb, ok := passwordFromDb.(string)
-	if !ok {
-		panic(fmt.Sprintf("%s 应该是 string 类型", password.Key))
-	}
+	pswdFromDb := loginer.GetPassword().Value.String()
 
-	err = bcrypt.CompareHashAndPassword([]byte(pswdFromDb), []byte(password.Value.String()))
-	if err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(pswdFromDb), []byte(password.Value.String())); err != nil {
 		log.Println(err)
-		return ErrAccountNotExistOrPasswordNotCorrect
+		return nil, ErrAccountNotExistOrPasswordNotCorrect
 	}
 	// 如果jwtSession为空，直接返回
 	if jwtSession == nil {
-		return nil
+		return loginer, nil
 	}
 
-	err = mapstructure.Decode(result, jwtSession)
-	if err != nil {
+	if err := mapstructure.Decode(loginer, jwtSession); err != nil {
 		panic(err)
 	}
-	return nil
+	return loginer, nil
 }
 
 // 登录成功后产生的jwt返回给客户端
@@ -86,16 +77,16 @@ func generate_jwt(jwtSession Defaulter) (string, error) {
 }
 
 func loginJWT(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Result, error) {
-	err := login(db, loginTabler, jwtSession)
+	loginer, err := login(db, loginTabler, jwtSession)
 	if err != nil {
-		return Result{nil, false}, err
+		return Result{}, err
 	}
 	token, err := generate_jwt(jwtSession)
 	if err != nil {
 		panic(err)
 	}
 	// todo: 是返回给Header还是Payload
-	pairs := Pairs{Pair{Key: "token", Value: token}, Pair{Key: "user", Value: loginTabler}}
+	pairs := Pairs{Pair{Key: "token", Value: token}, Pair{Key: "user", Value: loginer}}
 	return Result{pairs, false}, nil
 }
 
