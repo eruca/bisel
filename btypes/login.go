@@ -33,13 +33,13 @@ type Defaulter interface {
 	Default() Defaulter
 }
 
-func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) error {
+func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (err error) {
 	result := map[string]interface{}{}
 
 	account := loginTabler.GetAccount()
 	password := loginTabler.GetPassword()
 
-	if err := db.Gorm.
+	if err = db.Gorm.
 		Model(loginTabler).
 		Where(fmt.Sprintf("%s = ?", account.Key), account.Value).
 		First(&result).Error; err != nil {
@@ -58,12 +58,7 @@ func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) error {
 		panic(fmt.Sprintf("%s 应该是 string 类型", password.Key))
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password.Value.String()), bcrypt.DefaultCost)
-	if err != nil {
-		panic(err)
-	}
-
-	err = bcrypt.CompareHashAndPassword(hashedPassword, []byte(pswdFromDb))
+	err = bcrypt.CompareHashAndPassword([]byte(pswdFromDb), []byte(password.Value.String()))
 	if err != nil {
 		log.Println(err)
 		return ErrAccountNotExistOrPasswordNotCorrect
