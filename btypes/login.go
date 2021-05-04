@@ -95,7 +95,7 @@ func loginJWT(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Result, er
 		panic(err)
 	}
 	// todo: 是返回给Header还是Payload
-	pairs := Pairs{Pair{Key: "token", Value: token}}
+	pairs := Pairs{Pair{Key: "token", Value: token}, Pair{Key: "user", Value: loginTabler}}
 	return Result{pairs, false}, nil
 }
 
