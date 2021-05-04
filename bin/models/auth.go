@@ -6,8 +6,8 @@ import (
 )
 
 var (
-	_       btypes.Defaulter = (*JwtSession)(nil)
-	JwtAuth                  = middlewares.JwtAuthorize(&JwtSession{})
+	_                     btypes.Defaulter = (*JwtSession)(nil)
+	JwtAuthCheck, JwtAuth                  = middlewares.JwtAuthorize(&JwtSession{})
 )
 
 type JwtSession struct {
