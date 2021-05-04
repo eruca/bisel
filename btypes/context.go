@@ -68,9 +68,9 @@ func (c *Context) config(tabler Tabler, pt *ParamsContext, handlers ...Action) {
 
 	c.Executor.actions = make([]Action, 0, len(handlers)+1)
 	c.Executor.cursor = 0
+	c.AddActions(handlers...)
 
 	c.Results = make([]PairStringer, 0, len(handlers)+1)
-	c.AddActions(handlers...)
 }
 
 func (c *Context) AddActions(actions ...Action) {
