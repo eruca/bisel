@@ -28,6 +28,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 	engine.POST("/:table/:crud", func(c *gin.Context) {
 		table, crud := c.Param("table"), c.Param("crud")
 		router := fmt.Sprintf("%s/%s", table, crud)
+		// 产生btypes.Request
 		req := btypes.FromHttpRequest(router, c.Request.Body)
 		log.Printf("http request from client: %-v\n", req)
 
@@ -37,6 +38,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 	// 构建读入信息后的处理函数
 	processMixHttpRequest := func(httpReq *http.Request) ws.Process {
 		return func(send chan []byte, broadcast chan ws.BroadcastRequest, msg []byte) {
+			// 产生btypes.Request
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
 			log.Printf("websocket request from client: %-v\n", req)
 			manager.TakeAction(btypes.NewChanWriter(send), btypes.NewBroadcastChanWriter(broadcast, send), req, httpReq, btypes.WEBSOCKET)
@@ -98,11 +100,12 @@ func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
 
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.Config.ConfigResponseType, connType)
-		// 在这里会对paramContext进行初始化
+		// 在这里会对paramContext进行初始化, 还没有开始走流程
 		contextConfig(ctx)
 
 		// StartWorkFlow 会启动WorkFlow
 		// 并且会走完ctx.Executor,并且会生成一个Responder
+		// 走流程之前所有数据都已经准备好了
 		ctx.StartWorkFlow()
 		if ctx.Responder == nil {
 			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
