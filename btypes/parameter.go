@@ -164,7 +164,7 @@ func (qp *QueryParams) init(fullSize bool) {
 	}
 
 	if qp.Orderby == "" {
-		qp.Orderby = "id desc"
+		qp.Orderby = "updated_at desc"
 	}
 }
 
