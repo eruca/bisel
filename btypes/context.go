@@ -17,10 +17,12 @@ type Context struct {
 	// 连接类型
 	ConnectionType
 
+	// 框架填充的数据
 	*DB
+	Cacher
+
 	// 该Tabler 代表需要操作的数据表，比如{journals}/query
 	Tabler
-	Cacher
 
 	//! todo 登录人员的权限
 	JwtSession Defaulter
