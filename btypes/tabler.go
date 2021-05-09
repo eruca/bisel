@@ -28,9 +28,10 @@ type Tabler interface {
 
 	Upsert(*DB, *ParamsContext, Defaulter) (Result, error)
 	// Query 对于该表进行查询
-	// @params: 代表查询的参数
-	// return string: 代表该返回在Payload里的key
-	// return interface{}: 代表该返回key对应的结果
+	// @ParamsContext: 代表查询的参数
+	// @Defaulter代表JWT中的权限
+	// @Result 代表返回的Key=>Value对，同时表明是否是broadcast
+	// @error 代表发生错误，返回给客户端的信息
 	Query(*DB, *ParamsContext, Defaulter) (Result, error)
 	Delete(*DB, *ParamsContext, Defaulter) (Result, error)
 }
