@@ -44,7 +44,7 @@ func FromRequestPayload(rw json.RawMessage, tabler Tabler) Tabler {
 }
 
 type Connectter interface {
-	Connected(*DB, Cacher, ConfigResponseType) Responder
+	Push(*DB, Cacher, ConfigResponseType) Responder
 }
 
 func DoConnected(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, action string, fullSize bool) Responder {
