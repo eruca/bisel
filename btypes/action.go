@@ -38,6 +38,7 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 			} else {
 				response = BuildFromRequest(c.ConfigResponseType, c.Request, true, result.Broadcast)
 				response.Add(result.Payloads...)
+				c.Success = true
 			}
 			c.Responder = response
 

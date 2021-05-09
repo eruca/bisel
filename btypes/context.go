@@ -39,7 +39,11 @@ type Context struct {
 	// *Request 是这条请求信息的Request
 	*Request
 	Parameters *ParamsContext
+
+	// 应答包括成功与失败，因为都要返回给客户端
+	Success bool // 是应答成功，还是发生错误，
 	Responder
+
 	// 定制应答类型输出
 	ConfigResponseType
 }
