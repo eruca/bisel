@@ -101,7 +101,7 @@ func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.Config.ConfigResponseType, connType)
 		// 在这里会对paramContext进行初始化, 还没有开始走流程
-		contextConfig(ctx)
+		isLogin := contextConfig(ctx)
 
 		// StartWorkFlow 会启动WorkFlow
 		// 并且会走完ctx.Executor,并且会生成一个Responder
@@ -126,6 +126,10 @@ func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
 			_, err = io.Copy(broadcastWriter, btypes.ResponderToReader(ctx.Responder))
 		}
 
+		if isLogin && ctx.Success {
+			manager.Push(clientWriter, ctx.JwtSession)
+		}
+
 		ctx.Finish()
 	} else {
 		resp := btypes.BuildErrorResposeFromRequest(manager.Config.ConfigResponseType, req, fmt.Errorf("%q router not implemented yet", req.Type))
@@ -142,6 +146,17 @@ func (manager *Manager) Connected(c chan<- []byte) {
 		if connecter, ok := tabler.(btypes.Connectter); ok {
 			responder := connecter.Push(manager.db, manager.cacher, manager.Config.ConfigResponseType)
 			c <- responder.JSON()
+		}
+	}
+}
+
+func (manager *Manager) Push(writer io.Writer, jwtSession btypes.Defaulter) {
+	for _, tabler := range manager.tablers {
+		if pusher, ok := tabler.(btypes.Pusher); ok && pusher.When() == btypes.Logined {
+			if pusher.Auth(jwtSession) {
+				responder := pusher.Push(manager.db, manager.cacher, manager.Config.ConfigResponseType)
+				writer.Write(responder.JSON())
+			}
 		}
 	}
 }
