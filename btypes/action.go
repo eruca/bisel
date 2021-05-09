@@ -9,11 +9,12 @@ import (
 type Action func(c *Context) PairStringer
 
 // 对于Context进行配置
-type ContextConfig func(*Context)
+// @return represent islogin
+type ContextConfig func(*Context) bool
 
 // jwtSession: 目的是将jwt的需求构造成一个结构体，发送给客户端就可以里，这个Context也完成使命被回收了
 func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...Action) ContextConfig {
-	return func(c *Context) {
+	return func(c *Context) bool {
 		// 将客户端发送过来的Payload => ParamsContext
 		pc := ParamsContextFromJSON(tabler, pt, c.Request.Payload)
 		c.config(tabler, &pc, handlers...)
@@ -44,6 +45,7 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 
 			return c.Parameters.Assemble(bytes.NewBuffer(response.JSON()))
 		})
+		return pt == ParamLogin
 	}
 }
 
