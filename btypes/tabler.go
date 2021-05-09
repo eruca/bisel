@@ -43,6 +43,20 @@ func FromRequestPayload(rw json.RawMessage, tabler Tabler) Tabler {
 	return tabler
 }
 
+// 推送时机
+type PushTimer uint8
+
+const (
+	Connected PushTimer = iota
+	Logined
+)
+
+type Pusher interface {
+	Connectter
+	When() PushTimer
+	Auth(Defaulter) bool
+}
+
 type Connectter interface {
 	Push(*DB, Cacher, ConfigResponseType) Responder
 }
