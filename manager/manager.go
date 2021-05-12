@@ -9,6 +9,7 @@ import (
 
 	"github.com/eruca/bisel/btypes"
 	"github.com/eruca/bisel/net/ws"
+	"github.com/eruca/bisel/utils"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -41,7 +42,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 			// 产生btypes.Request
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
 			log.Printf("websocket request from client: %-v\n", req)
-			manager.TakeAction(btypes.NewChanWriter(send), btypes.NewBroadcastChanWriter(broadcast, send), req, httpReq, btypes.WEBSOCKET)
+			manager.TakeAction(utils.NewChanWriter(send), utils.NewBroadcastChanWriter(broadcast, send), req, httpReq, btypes.WEBSOCKET)
 		}
 	}
 	// 连接成功后马上发送的数据
