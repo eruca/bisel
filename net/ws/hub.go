@@ -1,7 +1,5 @@
 package ws
 
-import "log"
-
 type BroadcastRequest struct {
 	Data     []byte
 	Producer chan []byte
@@ -38,7 +36,6 @@ func (h *Hub) run() {
 				close(client.send)
 			}
 		case req := <-h.broadcast:
-			log.Println("广播服务")
 			for client := range h.clients {
 				if client.send != req.Producer {
 					client.send <- req.Data

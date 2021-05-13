@@ -1,6 +1,14 @@
 package manager
 
-import "github.com/eruca/bisel/btypes"
+import (
+	"os"
+
+	"github.com/eruca/bisel/btypes"
+	"github.com/eruca/bisel/utils"
+	"github.com/pelletier/go-toml"
+)
+
+const configFile = "config.toml"
 
 // 否则默认使用responseType作为ConfigResponseType
 func defaultResponseType(reqType string, successed bool) string {
@@ -10,18 +18,23 @@ func defaultResponseType(reqType string, successed bool) string {
 	return reqType + "_failure"
 }
 
-// ManagerConfig对一些参数进行默认配置
-type ManagerConfig struct {
-	btypes.ConfigResponseType
-	DefaultQuerySize int // 20
-}
-
-func (mc *ManagerConfig) init() {
-	if mc.ConfigResponseType == nil {
-		mc.ConfigResponseType = defaultResponseType
+func LoadConfigFile() btypes.Config {
+	config := btypes.Config{}
+	if utils.IsNotExist(configFile) {
+		config.SetDefault()
+		return config
 	}
 
-	if mc.DefaultQuerySize == 0 {
-		mc.DefaultQuerySize = btypes.DEFAULT_QUERY_SIZE
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		panic(err)
 	}
+
+	err = toml.Unmarshal(data, &config)
+	if err != nil {
+		panic(err)
+	}
+
+	config.SetDefault()
+	return config
 }

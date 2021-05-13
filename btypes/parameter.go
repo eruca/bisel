@@ -110,26 +110,26 @@ func (pc *ParamsContext) Assemble(value fmt.Stringer) PairStringer {
 }
 
 // ParamsContext 针对不同的ParamType 采取相应的处理
-func (pc *ParamsContext) Do(db *DB, tabler Tabler, jwtSession Defaulter) (Result, error) {
+func (pc *ParamsContext) Do(injected Injected, tabler Tabler, jwtSession Defaulter) (Result, error) {
 	switch pc.ParamType {
 	case ParamQuery:
 		// 应为客户端传送过来的数据不会序列化为Tabler，所以使用注入tabler
-		return tabler.Query(db, pc, jwtSession)
+		return tabler.Query(injected.DB, pc, jwtSession)
 
 	case ParamUpsert:
 		// pc.Tabler代表从客户端过来序列化后的数据
-		return pc.Tabler.Upsert(db, pc, jwtSession)
+		return pc.Tabler.Upsert(injected.DB, pc, jwtSession)
 
 	case ParamDelete:
 		// 同ParamUpsert
-		return pc.Tabler.Delete(db, pc, jwtSession)
+		return pc.Tabler.Delete(injected.DB, pc, jwtSession)
 
 	case ParamLogin:
 		loginTabler, ok := pc.Tabler.(LoginTabler)
 		if !ok {
 			panic(fmt.Sprintf("%s 没有实现 LoginTabler", pc.TableName()))
 		}
-		return loginJWT(db, loginTabler, jwtSession)
+		return loginJWT(injected, loginTabler, jwtSession)
 
 	default:
 		panic("should not happened")

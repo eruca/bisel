@@ -3,7 +3,6 @@ package btypes
 import (
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -11,11 +10,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
-)
-
-const (
-	expireDuration = time.Hour * 24
-	salt           = "big city"
 )
 
 type Loginer interface {
@@ -33,7 +27,7 @@ type Defaulter interface {
 	Default() Defaulter
 }
 
-func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Tabler, error) {
+func login(db *DB, logger Logger, loginTabler LoginTabler, jwtSession Defaulter) (Tabler, error) {
 	loginer := loginTabler.New().(LoginTabler)
 
 	account := loginTabler.GetAccount()
@@ -46,13 +40,13 @@ func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Tabler, error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrAccountNotExistOrPasswordNotCorrect
 		}
-		panic(err)
+		logger.Panic(err)
 	}
 
 	pswdFromDb := loginer.GetPassword().Value.String()
 
 	if err := bcrypt.CompareHashAndPassword([]byte(pswdFromDb), []byte(password.Value.String())); err != nil {
-		log.Println(err)
+		logger.Info(err)
 		return nil, ErrAccountNotExistOrPasswordNotCorrect
 	}
 	// 如果jwtSession为空，直接返回
@@ -61,27 +55,27 @@ func login(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Tabler, error
 	}
 
 	if err := mapstructure.Decode(loginer, jwtSession); err != nil {
-		panic(err)
+		logger.Panic(err)
 	}
 	return loginer, nil
 }
 
 // 登录成功后产生的jwt返回给客户端
 // todo: 1. 写在header() 2.写在payload里
-func generate_jwt(jwtSession Defaulter) (string, error) {
+func generate_jwt(jwtSession Defaulter, expire int, salt []byte) (string, error) {
 	sess := utils.Struct2Map(jwtSession)
-	sess["exp"] = time.Now().Add(expireDuration).Unix()
+	sess["exp"] = time.Now().Add(time.Duration(expire) * time.Hour).Unix()
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims(sess))
-	return token.SignedString([]byte(salt))
+	return token.SignedString(salt)
 }
 
-func loginJWT(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Result, error) {
-	loginer, err := login(db, loginTabler, jwtSession)
+func loginJWT(injected Injected, loginTabler LoginTabler, jwtSession Defaulter) (Result, error) {
+	loginer, err := login(injected.DB, injected.Logger, loginTabler, jwtSession)
 	if err != nil {
 		return Result{}, err
 	}
-	token, err := generate_jwt(jwtSession)
+	token, err := generate_jwt(jwtSession, injected.Expire, []byte(injected.JWTConfig.Salt))
 	if err != nil {
 		panic(err)
 	}
@@ -90,8 +84,8 @@ func loginJWT(db *DB, loginTabler LoginTabler, jwtSession Defaulter) (Result, er
 	return Result{pairs, false}, nil
 }
 
-func ParseToken(tokenString string, jwtSession Defaulter) error {
-	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) { return []byte(salt), nil })
+func ParseToken(tokenString string, jwtSession Defaulter, salt []byte) error {
+	token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) { return salt, nil })
 	if err != nil {
 		if ve, ok := err.(*jwt.ValidationError); ok {
 			if ve.Errors&jwt.ValidationErrorExpired != 0 {

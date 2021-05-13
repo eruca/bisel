@@ -54,7 +54,7 @@ func validate(c *btypes.Context, jwtSessionPool *sync.Pool) btypes.PairStringer 
 
 func parse(c *btypes.Context, token string, jwtSessionPool *sync.Pool) btypes.PairStringer {
 	sess := jwtSessionPool.Get().(btypes.Defaulter)
-	err := btypes.ParseToken(token, sess)
+	err := btypes.ParseToken(token, sess, []byte(c.JWTConfig.Salt))
 	if err != nil {
 		c.Responder = btypes.BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
 		return btypes.PairStringer{Key: PairKeyJWT, Value: btypes.ValueString(err.Error())}

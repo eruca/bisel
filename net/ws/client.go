@@ -1,10 +1,10 @@
 package ws
 
 import (
-	"log"
 	"net/http"
 	"time"
 
+	"github.com/eruca/bisel/btypes"
 	"github.com/gorilla/websocket"
 )
 
@@ -32,9 +32,9 @@ type Client struct {
 	send chan []byte
 }
 
-func (c *Client) readPump(hub *Hub, fn Process) {
+func (c *Client) readPump(hub *Hub, fn Process, logger btypes.Logger) {
 	defer func() {
-		log.Println("readPump", "client unregister", "conn close")
+		logger.Info("readPump", "client unregister", "conn close")
 		hub.unregister <- c
 		c.conn.Close()
 	}()
@@ -45,9 +45,9 @@ func (c *Client) readPump(hub *Hub, fn Process) {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Println("IsUnexpectedCloseError:", "err", err)
+				logger.Info("IsUnexpectedCloseError:", "err", err)
 			} else {
-				log.Println("other error:", "err", err)
+				logger.Info("other error:", "err", err)
 			}
 			break
 		}
@@ -56,12 +56,12 @@ func (c *Client) readPump(hub *Hub, fn Process) {
 	}
 }
 
-func (c *Client) writePump() {
+func (c *Client) writePump(logger btypes.Logger) {
 	ticker := time.NewTicker(pingPeriod)
 
 	defer func() {
 		ticker.Stop()
-		log.Println("writePump", "conn", "closed")
+		logger.Info("writePump", "conn", "closed")
 		c.conn.Close()
 	}()
 
@@ -76,20 +76,20 @@ func (c *Client) writePump() {
 
 			w, err := c.conn.NextWriter(websocket.TextMessage)
 			if err != nil {
-				log.Println("conn nextWriter", "err", err)
+				logger.Info("conn nextWriter", "err", err)
 				return
 			}
 			w.Write(message)
 
 			if err := w.Close(); err != nil {
-				log.Println("write close", "err", err)
+				logger.Info("write close", "err", err)
 				return
 			}
 
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				log.Println("conn.Write Ping Message ", "err", err)
+				logger.Info("conn.Write Ping Message ", "err", err)
 				return
 			}
 		}

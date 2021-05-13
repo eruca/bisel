@@ -29,9 +29,9 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 			// ParamLogin 是构造jwtSession
 			// 其他是使用jwtSession
 			if pt == ParamLogin {
-				result, err = pc.Do(c.DB, tabler, jwtSession)
+				result, err = pc.Do(c.Injected, tabler, jwtSession)
 			} else {
-				result, err = pc.Do(c.DB, tabler, c.JwtSession)
+				result, err = pc.Do(c.Injected, tabler, c.JwtSession)
 			}
 
 			if err != nil {

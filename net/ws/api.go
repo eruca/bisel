@@ -1,9 +1,10 @@
 package ws
 
 import (
-	"log"
 	"net/http"
 	"runtime"
+
+	"github.com/eruca/bisel/btypes"
 )
 
 // ProcessMixHttpRequest 混入*http.Request
@@ -27,13 +28,13 @@ type Connected func(send chan<- []byte)
 // 比如连接成功后，客户端发送一个init状态，然后response需要初始化的数据
 // WriteClient 直接往broadcast里发送东西，那么会从ReadProcess里读出结果
 // 主要是作为websocket发起者时
-func WebsocketHandler(process ProcessMixHttpRequest, connected Connected) http.HandlerFunc {
+func WebsocketHandler(process ProcessMixHttpRequest, connected Connected, logger btypes.Logger) http.HandlerFunc {
 	var hub = newHub()
 
 	// 获取广播接口
 	// ServeWs will serve the page request "/ws", and update the http to websocket
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Connected from", "Host", r.Host, "addr", r.RemoteAddr)
+		logger.Info("Connected from", "Host", r.Host, "addr", r.RemoteAddr)
 
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -43,7 +44,7 @@ func WebsocketHandler(process ProcessMixHttpRequest, connected Connected) http.H
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			http.Error(w, "服务器错误, 请联系管理员", http.StatusInternalServerError)
-			log.Fatalln("upgrage.Upgrade failed", "err", err)
+			logger.Fatal("upgrage.Upgrade failed", "err", err)
 			return
 		}
 
@@ -53,8 +54,8 @@ func WebsocketHandler(process ProcessMixHttpRequest, connected Connected) http.H
 		}
 		hub.register <- client
 
-		go client.readPump(hub, process(r))
-		go client.writePump()
+		go client.readPump(hub, process(r), logger)
+		go client.writePump(logger)
 
 		if connected != nil {
 			// 预推送数据, 如果预推送的量超过send的cache量，就会阻塞,

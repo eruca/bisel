@@ -13,10 +13,6 @@ import (
 	"gorm.io/gorm"
 )
 
-var (
-	addr = flag.String("addr", "9000", "the port of the server")
-)
-
 func main() {
 	flag.Parse()
 	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
@@ -34,14 +30,17 @@ func main() {
 	// 开启debug
 	db = db.Debug()
 
+	logger := btypes.NewLogger("", "info", btypes.LogStderr)
+	config := manager.LoadConfigFile()
+
 	// Manager
-	manager := manager.New(db, btypes.NewCacher(), manager.ManagerConfig{}, &journal.Journal{}, &users.User{})
+	manager := manager.New(db, btypes.NewCacher(logger), config, nil, &journal.Journal{}, &users.User{})
 	// 配置gin
 	engine := gin.Default()
 	engine.Use(cors())
 	manager.InitSystem(engine, nil)
 
-	log.Fatalln("Router.Run:", "err", engine.Run(":"+(*addr)))
+	log.Fatalln("Router.Run:", "err", engine.Run(":"+(config.App.Addr)))
 }
 
 // CORSMiddleware 实现跨域

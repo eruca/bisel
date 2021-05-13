@@ -2,7 +2,6 @@ package btypes
 
 import (
 	"encoding/json"
-	"log"
 )
 
 // Result 代表增删查修的结果
@@ -62,35 +61,35 @@ type Connectter interface {
 	Push(*DB, Cacher, ConfigResponseType) Responder
 }
 
-func PushWithDefaultParameter(db *DB, cacher Cacher, tabler Tabler, cft ConfigResponseType, action string, fullSize bool) Responder {
+func PushWithDefaultParameter(injected Injected, tabler Tabler, action string, fullSize bool) Responder {
 	pc := ParamsContextForConnectter(fullSize)
 
 	// key是按照查询参数MD5计算出俩的hash值
 	request_type := tabler.TableName() + "/" + action
 	key := pc.QueryParams.BuildCacheKey(request_type)
-	data, ok := cacher.Get(key)
+	data, ok := injected.Cacher.Get(key)
 	if ok {
-		rb := NewRawResponse(cft, &Request{Type: request_type}, data)
-		log.Println("Use Cache:", string(rb.JSON()))
+		rb := NewRawResponse(injected.ConfigResponseType, &Request{Type: request_type}, data)
+		injected.Logger.Info("Use Cache:", string(rb.JSON()))
 		return rb
 	}
 
-	result, err := tabler.Query(db, &pc, nil)
+	result, err := tabler.Query(injected.DB, &pc, nil)
 	if err != nil {
 		panic(err)
 	}
 
 	resp := Response{
-		Type:      cft(request_type, true),
+		Type:      injected.ConfigResponseType(request_type, true),
 		broadcast: result.Broadcast,
 	}
 	resp.Add(result.Payloads...)
 
 	// 进入缓存系统
 	// 设置缓存
-	cacher.Set(tabler.TableName(), key, resp.CachePayload())
+	injected.Cacher.Set(tabler.TableName(), key, resp.CachePayload())
 
-	log.Println("Query Database:", string(resp.JSON()))
+	injected.Logger.Info("Query Database:", string(resp.JSON()))
 
 	return &resp
 }
