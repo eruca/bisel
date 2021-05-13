@@ -1,10 +1,6 @@
-package utils
+package ws
 
-import (
-	"io"
-
-	"github.com/eruca/bisel/net/ws"
-)
+import "io"
 
 var _ io.Writer = (*ChanWriter)(nil)
 
@@ -21,11 +17,11 @@ func (c ChanWriter) Write(p []byte) (n int, err error) {
 }
 
 type BroadcastChanWriter struct {
-	ch       chan ws.BroadcastRequest
+	ch       chan BroadcastRequest
 	producer chan []byte
 }
 
-func NewBroadcastChanWriter(ch chan ws.BroadcastRequest, producer chan []byte) BroadcastChanWriter {
+func NewBroadcastChanWriter(ch chan BroadcastRequest, producer chan []byte) BroadcastChanWriter {
 	return BroadcastChanWriter{ch: ch, producer: producer}
 }
 
@@ -33,6 +29,6 @@ func (bc BroadcastChanWriter) Write(p []byte) (int, error) {
 	if bc.producer == nil {
 		panic("需要producer")
 	}
-	bc.ch <- ws.BroadcastRequest{Data: p, Producer: bc.producer}
+	bc.ch <- BroadcastRequest{Data: p, Producer: bc.producer}
 	return len(p), nil
 }
