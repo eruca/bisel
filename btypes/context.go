@@ -62,7 +62,7 @@ type Context struct {
 }
 
 func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType,
-	jwtConfig JWTConfig, connType ConnectionType) *Context {
+	logger Logger, jwtConfig JWTConfig, connType ConnectionType) *Context {
 	ctx := contextPool.Get().(*Context)
 
 	ctx.ConnectionType = connType
@@ -72,6 +72,7 @@ func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft 
 	ctx.HttpReq = httpReq
 	ctx.ConfigResponseType = cft
 	ctx.JWTConfig = jwtConfig
+	ctx.Logger = logger
 
 	// 初始化其他成员变量
 	ctx.Tabler = nil

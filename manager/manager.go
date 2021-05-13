@@ -64,7 +64,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 }
 
 // New ...
-func New(gdb *gorm.DB, cacher btypes.Cacher, config btypes.Config, crt btypes.ConfigResponseType, tablers ...btypes.Tabler) *Manager {
+func New(gdb *gorm.DB, cacher btypes.Cacher, logger btypes.Logger, config btypes.Config, crt btypes.ConfigResponseType, tablers ...btypes.Tabler) *Manager {
 	db := &btypes.DB{Gorm: gdb}
 	handlers := make(map[string]btypes.ContextConfig)
 	for _, tabler := range tablers {
@@ -84,6 +84,7 @@ func New(gdb *gorm.DB, cacher btypes.Cacher, config btypes.Config, crt btypes.Co
 		handlers: handlers,
 		crt:      crt,
 		config:   config,
+		logger:   logger,
 	}
 
 	return manager
@@ -102,7 +103,7 @@ func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
 
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.crt,
-			manager.config.JWT, connType)
+			manager.logger, manager.config.JWT, connType)
 
 		// 在这里会对paramContext进行初始化, 还没有开始走流程
 		isLogin := contextConfig(ctx)
