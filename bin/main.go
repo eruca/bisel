@@ -1,8 +1,7 @@
 package main
 
 import (
-	"log"
-	"time"
+	"os"
 
 	"github.com/eruca/bisel/bin/models/journal"
 	"github.com/eruca/bisel/bin/models/users"
@@ -11,21 +10,15 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func main() {
-	logging, writer := btypes.NewLogger("hello.log", "info", btypes.LogStderr|btypes.LogFile)
-	newLogger := logger.New(
-		log.New(writer, "\r\n", log.LstdFlags), // io writer
-		logger.Config{
-			SlowThreshold: time.Second,   // Slow SQL threshold
-			LogLevel:      logger.Silent, // Log level
-			Colorful:      true,
-		},
-	)
+	config := manager.LoadConfigFile()
+	config.Logger.StderrColor = true
 
-	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{Logger: newLogger})
+	logging := btypes.NewLogger(btypes.LogStderr|btypes.LogFile, config.Logger)
+
+	db, err := gorm.Open(sqlite.Open("test.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
@@ -40,8 +33,6 @@ func main() {
 	// 开启debug
 	db = db.Debug()
 
-	config := manager.LoadConfigFile()
-
 	// Manager
 	manager := manager.New(db, btypes.NewCacher(logging), logging, config, nil, &journal.Journal{}, &users.User{})
 	// 配置gin
@@ -49,7 +40,11 @@ func main() {
 	engine.Use(cors())
 	manager.InitSystem(engine, nil)
 
-	logging.Fatal("Router.Run:", "err", engine.Run(":"+(config.App.Addr)))
+	err = engine.Run(":" + (config.App.Addr))
+	if err != nil {
+		logging.Errorf("Router.Run: %v", err)
+		os.Exit(1)
+	}
 }
 
 // CORSMiddleware 实现跨域

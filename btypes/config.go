@@ -3,13 +3,16 @@ package btypes
 import (
 	"os"
 	"path"
+	"strings"
 
 	"github.com/eruca/bisel/utils"
 )
 
 type Logging struct {
-	Filename string
-	Level    string
+	Filename    string
+	Level       string
+	StderrColor bool
+	StderrLevel string
 }
 
 func (log *Logging) SetDefault() {
@@ -22,8 +25,30 @@ func (log *Logging) SetDefault() {
 		os.MkdirAll(dir, os.ModePerm)
 	}
 
-	if log.Level == "" {
+	switch strings.ToLower(log.Level) {
+	case "":
 		log.Level = "info"
+	case "debug":
+		log.Level = "debug"
+	case "warn":
+		log.Level = "warn"
+	case "error":
+		log.Level = "error"
+	default:
+		panic("unknown level:" + log.Level)
+	}
+
+	switch strings.ToLower(log.StderrLevel) {
+	case "":
+		log.StderrLevel = "info"
+	case "debug":
+		log.StderrLevel = "debug"
+	case "warn":
+		log.StderrLevel = "warn"
+	case "error":
+		log.StderrLevel = "error"
+	default:
+		panic("unknown level:" + log.StderrLevel)
 	}
 }
 

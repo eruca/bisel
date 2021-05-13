@@ -40,13 +40,14 @@ func login(db *DB, logger Logger, loginTabler LoginTabler, jwtSession Defaulter)
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrAccountNotExistOrPasswordNotCorrect
 		}
-		logger.Panic(err)
+		logger.Errorf("登录时，查找账号发生错误: %s", err.Error())
+		panic("登录查询数据库错误")
 	}
 
 	pswdFromDb := loginer.GetPassword().Value.String()
 
 	if err := bcrypt.CompareHashAndPassword([]byte(pswdFromDb), []byte(password.Value.String())); err != nil {
-		logger.Info(err)
+		logger.Infof(err.Error())
 		return nil, ErrAccountNotExistOrPasswordNotCorrect
 	}
 	// 如果jwtSession为空，直接返回
@@ -55,7 +56,8 @@ func login(db *DB, logger Logger, loginTabler LoginTabler, jwtSession Defaulter)
 	}
 
 	if err := mapstructure.Decode(loginer, jwtSession); err != nil {
-		logger.Panic(err)
+		logger.Errorf("将登录用户转码值jwtSession时发生错误: %s", err.Error())
+		panic("mapstructure.Decode(loginer,jwtSession) failed")
 	}
 	return loginer, nil
 }

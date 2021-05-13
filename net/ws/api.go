@@ -2,6 +2,7 @@ package ws
 
 import (
 	"net/http"
+	"os"
 	"runtime"
 
 	"github.com/eruca/bisel/btypes"
@@ -34,7 +35,7 @@ func WebsocketHandler(process ProcessMixHttpRequest, connected Connected, logger
 	// 获取广播接口
 	// ServeWs will serve the page request "/ws", and update the http to websocket
 	return func(w http.ResponseWriter, r *http.Request) {
-		logger.Info("Connected from", "Host", r.Host, "addr", r.RemoteAddr)
+		logger.Infof("Connected from Host: %s, Addr: %s", r.Host, r.RemoteAddr)
 
 		if r.Method != http.MethodGet {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -44,8 +45,8 @@ func WebsocketHandler(process ProcessMixHttpRequest, connected Connected, logger
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			http.Error(w, "服务器错误, 请联系管理员", http.StatusInternalServerError)
-			logger.Fatal("upgrage.Upgrade failed", "err", err)
-			return
+			logger.Errorf("upgrage.Upgrade failed: %v", err)
+			os.Exit(1)
 		}
 
 		client := &Client{

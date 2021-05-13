@@ -43,12 +43,11 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
 			manager.logger.Infof("websocket request from client: %-v\n", req)
 			manager.TakeAction(ws.NewChanWriter(send), ws.NewBroadcastChanWriter(broadcast, send), req, httpReq, btypes.WEBSOCKET)
-
 		}
 	}
 	// 连接成功后马上发送的数据
 	connected := func(send chan<- []byte) {
-		manager.logger.Info("Connected now, will send some data to client")
+		manager.logger.Infof("Connected now, will send some data to client")
 		manager.Connected(send)
 		if afterConnected != nil {
 			resp := afterConnected.Push(manager.db, manager.cacher, manager.crt)

@@ -34,7 +34,7 @@ type Client struct {
 
 func (c *Client) readPump(hub *Hub, fn Process, logger btypes.Logger) {
 	defer func() {
-		logger.Info("readPump", "client unregister", "conn close")
+		logger.Infof("readPump client unregister conn close")
 		hub.unregister <- c
 		c.conn.Close()
 	}()
@@ -45,9 +45,9 @@ func (c *Client) readPump(hub *Hub, fn Process, logger btypes.Logger) {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				logger.Info("IsUnexpectedCloseError:", "err", err)
+				logger.Infof("IsUnexpectedCloseError: %v", err)
 			} else {
-				logger.Info("other error:", "err", err)
+				logger.Infof("other error: %v", err)
 			}
 			break
 		}
@@ -61,7 +61,7 @@ func (c *Client) writePump(logger btypes.Logger) {
 
 	defer func() {
 		ticker.Stop()
-		logger.Info("writePump", "conn", "closed")
+		logger.Infof("writePump conn closed")
 		c.conn.Close()
 	}()
 
@@ -76,20 +76,20 @@ func (c *Client) writePump(logger btypes.Logger) {
 
 			w, err := c.conn.NextWriter(websocket.TextMessage)
 			if err != nil {
-				logger.Info("conn nextWriter", "err", err)
+				logger.Infof("conn nextWriter: %v", err)
 				return
 			}
 			w.Write(message)
 
 			if err := w.Close(); err != nil {
-				logger.Info("write close", "err", err)
+				logger.Infof("write close: %v", err)
 				return
 			}
 
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				logger.Info("conn.Write Ping Message ", "err", err)
+				logger.Infof("conn.Write Ping Message: %v", err)
 				return
 			}
 		}

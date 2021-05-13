@@ -1,6 +1,7 @@
 package btypes
 
 import (
+	"os"
 	"sync"
 
 	lru "github.com/hashicorp/golang-lru"
@@ -29,7 +30,8 @@ type ARC struct {
 func NewCacher(logger Logger) *ARC {
 	cacher, err := lru.NewARC(CACHESIZE)
 	if err != nil {
-		logger.Panicf("lru.NewARC(%d) 发生错误: %s", CACHESIZE, err.Error())
+		logger.Errorf("lru.NewARC(%d) 发生错误: %s", CACHESIZE, err.Error())
+		os.Exit(1)
 	}
 	return &ARC{
 		cacher:  cacher,
@@ -42,7 +44,8 @@ func (arc *ARC) Get(key string) ([]byte, bool) {
 		if data, ok := v.([]byte); ok {
 			return data, true
 		} else {
-			arc.logger.Panicf("插入%q时不是[]byte类型数据", key)
+			arc.logger.Errorf("插入%q时不是[]byte类型数据", key)
+			panic("插入不是[]byte类型")
 		}
 	}
 	return nil, false

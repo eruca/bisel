@@ -70,7 +70,7 @@ func PushWithDefaultParameter(injected Injected, tabler Tabler, action string, f
 	data, ok := injected.Cacher.Get(key)
 	if ok {
 		rb := NewRawResponse(injected.ConfigResponseType, &Request{Type: request_type}, data)
-		injected.Logger.Info("Use Cache:", string(rb.JSON()))
+		injected.Logger.Infof("Use Cache:", string(rb.JSON()))
 		return rb
 	}
 
@@ -89,7 +89,7 @@ func PushWithDefaultParameter(injected Injected, tabler Tabler, action string, f
 	// 设置缓存
 	injected.Cacher.Set(tabler.TableName(), key, resp.CachePayload())
 
-	injected.Logger.Info("Query Database:", string(resp.JSON()))
+	injected.Logger.Infof("Query Database:", string(resp.JSON()))
 
 	return &resp
 }
