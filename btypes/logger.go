@@ -42,7 +42,7 @@ func getLoggerLevel(lvl string) zapcore.Level {
 	return zapcore.InfoLevel
 }
 
-func NewLogger(filename, lvl string, logTargets LogTarget) Logger {
+func NewLogger(filename, lvl string, logTargets LogTarget) (Logger, io.Writer) {
 	level := getLoggerLevel(lvl)
 
 	var writers []io.Writer
@@ -61,12 +61,13 @@ func NewLogger(filename, lvl string, logTargets LogTarget) Logger {
 		})
 	}
 
-	syncWriter := zapcore.AddSync(io.MultiWriter(writers...))
+	writer := io.MultiWriter(writers...)
+	syncWriter := zapcore.AddSync(writer)
 	encoder := zap.NewProductionEncoderConfig()
 	encoder.EncodeTime = zapcore.ISO8601TimeEncoder
 	core := zapcore.NewCore(zapcore.NewJSONEncoder(encoder), syncWriter, zap.NewAtomicLevelAt(level))
 	log := zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
-	return Logger{log.Sugar()}
+	return Logger{log.Sugar()}, writer
 }
 
 func (logger *Logger) Debug(args ...interface{}) {
