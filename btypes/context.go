@@ -1,7 +1,6 @@
 package btypes
 
 import (
-	"log"
 	"net/http"
 	"sync"
 )
@@ -13,13 +12,24 @@ var contextPool sync.Pool = sync.Pool{
 	},
 }
 
+type Injected struct {
+	*DB
+	Cacher
+	// Logger 日志
+	Logger
+	JWTConfig
+	// 定制应答类型输出
+	ConfigResponseType
+}
+
 type Context struct {
 	// 连接类型
 	ConnectionType
 
 	// 框架填充的数据
-	*DB
-	Cacher
+	// *DB
+	// Cacher
+	Injected
 
 	// 该Tabler 代表需要操作的数据表，比如{journals}/query
 	Tabler
@@ -45,10 +55,14 @@ type Context struct {
 	Responder
 
 	// 定制应答类型输出
-	ConfigResponseType
+	// ConfigResponseType
+
+	// JWT
+	// JWTConfig
 }
 
-func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType, connType ConnectionType) *Context {
+func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType,
+	jwtConfig JWTConfig, connType ConnectionType) *Context {
 	ctx := contextPool.Get().(*Context)
 
 	ctx.ConnectionType = connType
@@ -57,6 +71,7 @@ func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft 
 	ctx.Request = req
 	ctx.HttpReq = httpReq
 	ctx.ConfigResponseType = cft
+	ctx.JWTConfig = jwtConfig
 
 	// 初始化其他成员变量
 	ctx.Tabler = nil
@@ -111,8 +126,8 @@ func (ctx *Context) dispose() {
 }
 
 func (c *Context) logResults() {
-	log.Printf("'%d'个handler结果:", len(c.Results))
+	c.Logger.Infof("'%d'个handler结果:", len(c.Results))
 	for i := len(c.Results) - 1; i >= 0; i-- {
-		log.Printf("\t%d: %s => %v\n", len(c.Results)-i, c.Results[i].Key, c.Results[i].Value)
+		c.Logger.Infof("\t%d: %s => %v\n", len(c.Results)-i, c.Results[i].Key, c.Results[i].Value)
 	}
 }
