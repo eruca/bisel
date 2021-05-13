@@ -19,7 +19,9 @@ type Manager struct {
 	cacher   btypes.Cacher
 	tablers  []btypes.Tabler
 	handlers map[string]btypes.ContextConfig
-	Config   ManagerConfig
+	crt      btypes.ConfigResponseType
+	config   btypes.Config
+	logger   btypes.Logger
 }
 
 // InitSystem 分别启动http,websocket
@@ -63,9 +65,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 }
 
 // New ...
-func New(gdb *gorm.DB, cacher btypes.Cacher,
-	config ManagerConfig, tablers ...btypes.Tabler) *Manager {
-
+func New(gdb *gorm.DB, cacher btypes.Cacher, config btypes.Config, crt btypes.ConfigResponseType, tablers ...btypes.Tabler) *Manager {
 	db := &btypes.DB{Gorm: gdb}
 	handlers := make(map[string]btypes.ContextConfig)
 	for _, tabler := range tablers {
@@ -74,15 +74,17 @@ func New(gdb *gorm.DB, cacher btypes.Cacher,
 		tabler.Register(handlers)
 	}
 
-	// config初始化使用默认的
-	config.init()
+	if crt == nil {
+		crt = defaultResponseType
+	}
 
 	manager := &Manager{
 		db:       db,
 		cacher:   cacher,
 		tablers:  tablers,
 		handlers: handlers,
-		Config:   config,
+		crt:      crt,
+		config:   config,
 	}
 
 	return manager
