@@ -26,7 +26,7 @@ func (log *Logging) SetDefault() {
 	}
 
 	switch strings.ToLower(log.Level) {
-	case "":
+	case "", "info":
 		log.Level = "info"
 	case "debug":
 		log.Level = "debug"
