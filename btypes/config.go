@@ -18,6 +18,9 @@ type Logging struct {
 func (log *Logging) SetDefault() {
 	if log.Filename == "" {
 		log.Filename = "./logs/zap.log"
+	} else if !strings.HasPrefix(log.Filename, "./logs/") && !strings.HasPrefix(log.Filename, "logs/") {
+		// 所有的logs都在logs目录下，如果未以logs/开始，就添加
+		log.Filename = path.Join("logs/", log.Filename)
 	}
 
 	dir := path.Dir(log.Filename)
