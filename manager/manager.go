@@ -50,7 +50,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		manager.logger.Infof("Connected now, will send some data to client")
 		manager.Connected(send)
 		if afterConnected != nil {
-			resp := afterConnected.Push(manager.db, manager.cacher, manager.crt)
+			resp := afterConnected.Push(manager.db, manager.cacher, manager.crt, manager.logger)
 			send <- resp.JSON()
 		}
 	}
@@ -148,7 +148,7 @@ func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
 func (manager *Manager) Connected(c chan<- []byte) {
 	for _, tabler := range manager.tablers {
 		if connecter, ok := tabler.(btypes.Connectter); ok {
-			responder := connecter.Push(manager.db, manager.cacher, manager.crt)
+			responder := connecter.Push(manager.db, manager.cacher, manager.crt, manager.logger)
 			c <- responder.JSON()
 		}
 	}
@@ -158,7 +158,7 @@ func (manager *Manager) Push(writer io.Writer, jwtSession btypes.Defaulter) {
 	for _, tabler := range manager.tablers {
 		if pusher, ok := tabler.(btypes.Pusher); ok && pusher.When() == btypes.Logined {
 			if pusher.Auth(jwtSession) {
-				responder := pusher.Push(manager.db, manager.cacher, manager.crt)
+				responder := pusher.Push(manager.db, manager.cacher, manager.crt, manager.logger)
 				writer.Write(responder.JSON())
 			}
 		}
