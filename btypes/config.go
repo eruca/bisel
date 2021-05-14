@@ -15,6 +15,23 @@ type Logging struct {
 	StderrLevel string
 }
 
+// setLevel 因为存在输入字符串不合格
+// 默认只接受一下情况，并正规化
+func setLevel(pStr *string) {
+	switch strings.ToLower(*pStr) {
+	case "", "info":
+		*pStr = "info"
+	case "debug":
+		*pStr = "debug"
+	case "warn":
+		*pStr = "warn"
+	case "error":
+		*pStr = "error"
+	default:
+		panic("unknown level:" + *pStr)
+	}
+}
+
 func (log *Logging) SetDefault() {
 	if log.Filename == "" {
 		log.Filename = "./logs/zap.log"
@@ -28,31 +45,8 @@ func (log *Logging) SetDefault() {
 		os.MkdirAll(dir, os.ModePerm)
 	}
 
-	switch strings.ToLower(log.Level) {
-	case "", "info":
-		log.Level = "info"
-	case "debug":
-		log.Level = "debug"
-	case "warn":
-		log.Level = "warn"
-	case "error":
-		log.Level = "error"
-	default:
-		panic("unknown level:" + log.Level)
-	}
-
-	switch strings.ToLower(log.StderrLevel) {
-	case "":
-		log.StderrLevel = "info"
-	case "debug":
-		log.StderrLevel = "debug"
-	case "warn":
-		log.StderrLevel = "warn"
-	case "error":
-		log.StderrLevel = "error"
-	default:
-		panic("unknown level:" + log.StderrLevel)
-	}
+	setLevel(&log.Level)
+	setLevel(&log.StderrLevel)
 }
 
 type JWTConfig struct {
