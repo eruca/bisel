@@ -80,6 +80,7 @@ func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft 
 	ctx.Executor.actions = nil
 	ctx.Executor.cursor = 0
 	ctx.Results = nil
+	ctx.Success = false
 	ctx.Responder = nil
 	return ctx
 }
@@ -99,9 +100,7 @@ func (c *Context) AddActions(actions ...Action) {
 	c.Executor.actions = append(c.Executor.actions, actions...)
 }
 
-func (c *Context) StartWorkFlow() {
-	c.exec()
-}
+func (c *Context) StartWorkFlow() { c.exec() }
 
 func (c *Context) Next() {
 	// actions 向前一步
@@ -119,14 +118,27 @@ func (c *Context) exec() {
 
 func (ctx *Context) Finish() {
 	ctx.logResults()
-	ctx.dispose()
+
 	if ctx.Tabler != nil {
 		ctx.Tabler.Done()
+		ctx.Tabler = nil
 	}
-	ctx.Tabler = nil
+	if ctx.Request != nil {
+		ctx.Request.Done()
+		ctx.Request = nil
+	}
+	if ctx.Responder != nil {
+		ctx.Responder.Done()
+		ctx.Responder = nil
+	}
+	// 需要把ctx.Parameters设置为nil,否则该参数可能挂着Tabler,导致Tabler无法回收
+	ctx.Parameters = nil
+	ctx.HttpReq = nil
+
+	ctx.Done()
 }
 
-func (ctx *Context) dispose() {
+func (ctx *Context) Done() {
 	contextPool.Put(ctx)
 }
 
