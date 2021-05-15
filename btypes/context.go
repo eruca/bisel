@@ -129,6 +129,6 @@ func (ctx *Context) dispose() {
 func (c *Context) logResults() {
 	c.Logger.Infof("'%d'个handler结果:", len(c.Results))
 	for i := len(c.Results) - 1; i >= 0; i-- {
-		c.Logger.Infof("\t\t%d: %s => %v\n", len(c.Results)-i, c.Results[i].Key, c.Results[i].Value)
+		c.Logger.Infof("\t\t%d: %s => %v", len(c.Results)-i, c.Results[i].Key, c.Results[i].Value)
 	}
 }
