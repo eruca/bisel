@@ -36,7 +36,7 @@ func (j *User) GetPassword() btypes.PairStringer {
 	return btypes.PairStringer{Key: "password", Value: btypes.ValueString(j.Password)}
 }
 
-func (j *User) New() btypes.Tabler {
+func (j *User) New() btypes.Loginer {
 	return &User{}
 }
 
