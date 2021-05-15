@@ -8,6 +8,7 @@ import (
 	"github.com/eruca/bisel/utils"
 )
 
+// *********************** Logging ******************************
 type Logging struct {
 	Filename    string
 	Level       string
@@ -49,6 +50,8 @@ func (log *Logging) SetDefault() {
 	setLevel(&log.StderrLevel)
 }
 
+// *******************************************************************
+// JWTConfig
 type JWTConfig struct {
 	Salt   string
 	Expire int
@@ -64,12 +67,18 @@ func (jwt *JWTConfig) SetDefault() {
 	}
 }
 
+// ********************************* AppConfig *********************
 type AppConfig struct {
-	Addr      string
-	QuerySize int
+	DatabaseHost string
+	Addr         string
+	QuerySize    int
 }
 
 func (app *AppConfig) SetDefault() {
+	if app.DatabaseHost == "" {
+		app.DatabaseHost = "localhost"
+	}
+
 	if app.Addr == "" {
 		app.Addr = "9000"
 	}
