@@ -1,10 +1,10 @@
 package btypes
 
 import (
-	"os"
 	"sync"
+	"time"
 
-	lru "github.com/hashicorp/golang-lru"
+	"github.com/bluele/gcache"
 )
 
 const CACHESIZE = 512
@@ -21,18 +21,14 @@ type Cacher interface {
 }
 
 type ARC struct {
-	cacher  *lru.ARCCache
+	cacher  gcache.Cache
 	records map[string][]string
 	logger  Logger
 	sync.Mutex
 }
 
 func NewCacher(logger Logger) *ARC {
-	cacher, err := lru.NewARC(CACHESIZE)
-	if err != nil {
-		logger.Errorf("lru.NewARC(%d) 发生错误: %s", CACHESIZE, err.Error())
-		os.Exit(1)
-	}
+	cacher := gcache.New(CACHESIZE).ARC().Expiration(12 * time.Hour).Build()
 	return &ARC{
 		cacher:  cacher,
 		records: map[string][]string{},
@@ -40,15 +36,17 @@ func NewCacher(logger Logger) *ARC {
 }
 
 func (arc *ARC) Get(key string) ([]byte, bool) {
-	if v, ok := arc.cacher.Get(key); ok {
-		if data, ok := v.([]byte); ok {
-			return data, true
-		} else {
-			arc.logger.Errorf("插入%q时不是[]byte类型数据", key)
-			panic("插入不是[]byte类型")
-		}
+	v, err := arc.cacher.Get(key)
+	if err != nil {
+		arc.logger.Errorf("获取数据:key:%s 发生错误:%v", key, err)
+		panic("获取数据错误")
 	}
-	return nil, false
+	data, ok := v.([]byte)
+	if !ok {
+		arc.logger.Errorf("插入%q时不是[]byte类型数据", key)
+		panic("插入不是[]byte类型")
+	}
+	return data, true
 }
 
 func (arc *ARC) Set(tableName, key string, value []byte) {
@@ -61,7 +59,7 @@ func (arc *ARC) Set(tableName, key string, value []byte) {
 		arc.records[tableName] = []string{key}
 	}
 	//! 这个是原子操作，可是需要为了和map同步，就一起上锁了
-	arc.cacher.Add(key, value)
+	arc.cacher.Set(key, value)
 }
 
 func (arc *ARC) Clear(tableNames ...string) {
