@@ -13,7 +13,6 @@ import (
 )
 
 type Loginer interface {
-	New() Loginer
 	GetAccount() PairStringer
 	GetPassword() PairStringer
 }
