@@ -33,7 +33,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		req := btypes.FromHttpRequest(router, c.Request.Body)
 		manager.logger.Infof("http request from client: %-v\n", req)
 
-		manager.TakeActionHttp(c.Writer, req, c.Request, btypes.HTTP)
+		manager.TakeActionHttp(c.Writer, req, c.Request)
 	})
 
 	// 构建读入信息后的处理函数
@@ -42,7 +42,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 			// 产生btypes.Request
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
 			manager.logger.Infof("websocket request from client: %-v\n", req)
-			manager.TakeActionWebsocket(send, broadcast, req, httpReq, btypes.WEBSOCKET)
+			manager.TakeActionWebsocket(send, broadcast, req, httpReq)
 		}
 	}
 	// 连接成功后马上发送的数据
@@ -96,10 +96,10 @@ func (manager *Manager) StartTasks(tasks ...btypes.Task) {
 }
 
 func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.BroadcastRequest,
-	req *btypes.Request, httpReq *http.Request, connType btypes.ConnectionType) (err error) {
+	req *btypes.Request, httpReq *http.Request) (err error) {
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.crt,
-			manager.logger, manager.config.JWT, connType)
+			manager.logger, manager.config.JWT, btypes.WEBSOCKET)
 
 		// 在这里会对paramContext进行初始化, 还没有开始走流程
 		isLogin := contextConfig(ctx)
@@ -140,11 +140,11 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 // TakeAction 可以并发执行
 //! Notice: 因为写入都是在初始化阶段，读取可以并发
 func (manager *Manager) TakeActionHttp(clientWriter io.Writer,
-	req *btypes.Request, httpReq *http.Request, connType btypes.ConnectionType) (err error) {
+	req *btypes.Request, httpReq *http.Request) (err error) {
 
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.crt,
-			manager.logger, manager.config.JWT, connType)
+			manager.logger, manager.config.JWT, btypes.HTTP)
 
 		// 在这里会对paramContext进行初始化, 还没有开始走流程
 		contextConfig(ctx)
