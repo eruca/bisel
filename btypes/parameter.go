@@ -74,7 +74,7 @@ func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) (pc 
 			panic(fmt.Sprintf("%s is nil", pt))
 		}
 
-		pc.Tabler = tabler.New()
+		pc.Tabler = tabler
 		err := json.Unmarshal(rw, pc.Tabler)
 		if err != nil {
 			panic(err)
