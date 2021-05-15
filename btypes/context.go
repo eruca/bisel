@@ -84,9 +84,9 @@ func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft 
 	return ctx
 }
 
-func (c *Context) config(tabler Tabler, pt *ParamsContext, handlers ...Action) {
+func (c *Context) config(tabler Tabler, pc *ParamsContext, handlers ...Action) {
 	c.Tabler = tabler
-	c.Parameters = pt
+	c.Parameters = pc
 
 	c.Executor.actions = make([]Action, 0, len(handlers)+1)
 	c.Executor.cursor = 0
