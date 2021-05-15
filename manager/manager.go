@@ -33,7 +33,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		req := btypes.FromHttpRequest(router, c.Request.Body)
 		manager.logger.Infof("http request from client: %-v\n", req)
 
-		manager.TakeAction(c.Writer, nil, req, c.Request, btypes.HTTP)
+		manager.TakeActionHttp(c.Writer, req, c.Request, btypes.HTTP)
 	})
 
 	// 构建读入信息后的处理函数
@@ -42,7 +42,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 			// 产生btypes.Request
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
 			manager.logger.Infof("websocket request from client: %-v\n", req)
-			manager.TakeAction(ws.NewChanWriter(send), ws.NewBroadcastChanWriter(broadcast, send), req, httpReq, btypes.WEBSOCKET)
+			manager.TakeActionWebsocket(send, broadcast, req, httpReq, btypes.WEBSOCKET)
 		}
 	}
 	// 连接成功后马上发送的数据
@@ -95,11 +95,8 @@ func (manager *Manager) StartTasks(tasks ...btypes.Task) {
 	}
 }
 
-// TakeAction 可以并发执行
-//! Notice: 因为写入都是在初始化阶段，读取可以并发
-func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
+func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.BroadcastRequest,
 	req *btypes.Request, httpReq *http.Request, connType btypes.ConnectionType) (err error) {
-
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.crt,
 			manager.logger, manager.config.JWT, connType)
@@ -115,11 +112,7 @@ func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
 			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
 		}
 
-		respReader := btypes.ResponderToReader(ctx.Responder)
-		_, err = io.Copy(clientWriter, respReader)
-		if err != nil {
-			panic(err)
-		}
+		send <- ctx.Responder.JSON()
 
 		if ctx.Responder.Broadcast() {
 			if connType == btypes.HTTP {
@@ -127,11 +120,50 @@ func (manager *Manager) TakeAction(clientWriter, broadcastWriter io.Writer,
 			}
 			ctx.Responder.RemoveUUID()
 			ctx.Responder.Silence()
-			_, err = io.Copy(broadcastWriter, btypes.ResponderToReader(ctx.Responder))
+			broadcast <- ws.BroadcastRequest{
+				Data:     ctx.Responder.JSON(),
+				Producer: send,
+			}
 		}
 
 		if isLogin && ctx.Success {
-			manager.Push(clientWriter, ctx.JwtSession)
+			manager.Push(send, ctx.JwtSession)
+		}
+
+		ctx.Finish()
+	} else {
+		resp := btypes.BuildErrorResposeFromRequest(manager.crt, req,
+			fmt.Errorf("%q router not implemented yet", req.Type))
+		send <- resp.JSON()
+	}
+
+	return
+}
+
+// TakeAction 可以并发执行
+//! Notice: 因为写入都是在初始化阶段，读取可以并发
+func (manager *Manager) TakeActionHttp(clientWriter io.Writer,
+	req *btypes.Request, httpReq *http.Request, connType btypes.ConnectionType) (err error) {
+
+	if contextConfig, ok := manager.handlers[req.Type]; ok {
+		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.crt,
+			manager.logger, manager.config.JWT, connType)
+
+		// 在这里会对paramContext进行初始化, 还没有开始走流程
+		contextConfig(ctx)
+
+		// StartWorkFlow 会启动WorkFlow
+		// 并且会走完ctx.Executor,并且会生成一个Responder
+		// 走流程之前所有数据都已经准备好了
+		ctx.StartWorkFlow()
+		if ctx.Responder == nil {
+			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
+		}
+
+		respReader := btypes.ResponderToReader(ctx.Responder)
+		_, err = io.Copy(clientWriter, respReader)
+		if err != nil {
+			panic(err)
 		}
 
 		ctx.Finish()
@@ -154,12 +186,12 @@ func (manager *Manager) Connected(c chan<- []byte) {
 	}
 }
 
-func (manager *Manager) Push(writer io.Writer, jwtSession btypes.Defaulter) {
+func (manager *Manager) Push(send chan<- []byte, jwtSession btypes.Defaulter) {
 	for _, tabler := range manager.tablers {
 		if pusher, ok := tabler.(btypes.Pusher); ok && pusher.When() == btypes.Logined {
 			if pusher.Auth(jwtSession) {
 				responder := pusher.Push(manager.db, manager.cacher, manager.crt, manager.logger)
-				writer.Write(responder.JSON())
+				send <- responder.JSON()
 			}
 		}
 	}
