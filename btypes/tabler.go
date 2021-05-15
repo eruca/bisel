@@ -72,7 +72,7 @@ func PushWithDefaultParameter(db *DB, cacher Cacher, cft ConfigResponseType, log
 	data, ok := cacher.Get(key)
 	if ok {
 		rb := NewRawResponse(cft, &Request{Type: request_type}, data)
-		logger.Infof("Use Cache:", string(rb.JSON()))
+		logger.Infof("Use Cache: %s", string(rb.JSON()))
 		return rb
 	}
 
@@ -91,7 +91,7 @@ func PushWithDefaultParameter(db *DB, cacher Cacher, cft ConfigResponseType, log
 	// 设置缓存
 	cacher.Set(tabler.TableName(), key, resp.CachePayload())
 
-	logger.Infof("Query Database:", string(resp.JSON()))
+	logger.Infof("Query Database: %s", string(resp.JSON()))
 
 	return &resp
 }
