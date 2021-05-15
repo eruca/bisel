@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/eruca/bisel/bin/models"
 	"github.com/eruca/bisel/btypes"
@@ -14,6 +15,11 @@ var (
 	_         btypes.Tabler  = (*User)(nil)
 	_         btypes.Loginer = (*User)(nil)
 	tableName string         = "users"
+	usersPool                = &sync.Pool{
+		New: func() interface{} {
+			return &User{}
+		},
+	}
 )
 
 type User struct {
@@ -37,7 +43,19 @@ func (j *User) GetPassword() btypes.PairStringer {
 }
 
 func (j *User) New() btypes.Tabler {
-	return &User{}
+	u := usersPool.Get().(*User)
+	u.Reset()
+	u.Account = ""
+	u.Password = ""
+	u.Name = ""
+	u.Ismale = false
+	u.Age = 0
+	u.Role = 0
+	return u
+}
+
+func (j *User) Done() {
+	usersPool.Put(j)
 }
 
 func (j *User) Model() *btypes.GormModel {

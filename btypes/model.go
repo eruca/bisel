@@ -21,6 +21,14 @@ func (model *GormModel) RowID() uint {
 	return model.ID
 }
 
+func (model *GormModel) Reset() {
+	model.ID = 0
+	model.CreatedAt = time.Time{}
+	model.UpdatedAt = time.Time{}
+	model.DeletedAt = gorm.DeletedAt{}
+	model.Version = 0
+}
+
 // insert 插入新数据时有可能会违反独一约束，则需要处理该类错误，需在tabler内部处理
 func (model *GormModel) insert(db *DB, tabler Tabler) error {
 	err := db.Gorm.Create(tabler).Error

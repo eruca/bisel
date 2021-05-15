@@ -4,14 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/eruca/bisel/btypes"
 	"github.com/eruca/bisel/middlewares"
 )
 
 var (
-	_         btypes.Tabler = (*Journal)(nil)
-	tableName string        = "journals"
+	_           btypes.Tabler = (*Journal)(nil)
+	tableName   string        = "journals"
+	journalPool               = &sync.Pool{
+		New: func() interface{} {
+			return &Journal{}
+		},
+	}
 )
 
 type Journal struct {
@@ -22,7 +28,17 @@ type Journal struct {
 }
 
 func (j *Journal) New() btypes.Tabler {
-	return &Journal{}
+	j1 := journalPool.Get().(*Journal)
+
+	j1.Reset()
+	j1.Name = ""
+	j1.Url = ""
+	j1.Description.Valid = false
+	return j1
+}
+
+func (j *Journal) Done() {
+	journalPool.Put(j)
 }
 
 func (j *Journal) Model() *btypes.GormModel {
