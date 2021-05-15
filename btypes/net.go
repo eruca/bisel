@@ -5,11 +5,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync"
 )
 
 var (
 	_ Responder = (*RawResponse)(nil)
 	_ Responder = (*Response)(nil)
+
+	// Pools
+	requestPool = &sync.Pool{
+		New: func() interface{} {
+			return &Request{}
+		},
+	}
+	responsePool = &sync.Pool{
+		New: func() interface{} {
+			return &Response{}
+		},
+	}
+	rawResponsePool = &sync.Pool{
+		New: func() interface{} {
+			return &RawResponse{}
+		},
+	}
 )
 
 // ConnectionType 代表连接类型
@@ -29,12 +47,27 @@ func ResponderToReader(resp Responder) io.Reader {
 	return bytes.NewBuffer(resp.JSON())
 }
 
+// *********************************************************************
 //* Request 从客户端发送过来的请求
 type Request struct {
 	Type    string          `json:"type,omitempty"`
 	Payload json.RawMessage `json:"payload,omitempty"`
 	UUID    string          `json:"uuid,omitempty"`
 	Token   string          `json:"token,omitempty"`
+}
+
+func newRequest() *Request {
+	req := requestPool.Get().(*Request)
+	req.Type = ""
+	req.Payload = nil
+	req.UUID = ""
+	req.Token = ""
+
+	return req
+}
+
+func (req *Request) Done() {
+	requestPool.Put(req)
 }
 
 func (req *Request) String() string {
@@ -44,7 +77,8 @@ func (req *Request) String() string {
 
 // NewRequest 将msg解析为*Request
 func NewRequest(msg []byte) *Request {
-	request := &Request{}
+	request := newRequest()
+
 	err := json.Unmarshal(msg, request)
 	if err != nil {
 		panic(err)
@@ -52,11 +86,17 @@ func NewRequest(msg []byte) *Request {
 	return request
 }
 
+func NewRequestWithType(t string) *Request {
+	request := newRequest()
+	request.Type = t
+	return request
+}
+
 // FromHttpRequest
 // http.router => TYPE
 // @body => Payload, 如果是query,则可以使用null, 其他不行，所以不能再这里设置
 func FromHttpRequest(router string, rder io.ReadCloser) *Request {
-	request := &Request{Type: router}
+	request := NewRequestWithType(router)
 	err := json.NewDecoder(rder).Decode(&request)
 	if err != nil && err != io.EOF {
 		panic(err)
@@ -65,6 +105,7 @@ func FromHttpRequest(router string, rder io.ReadCloser) *Request {
 	return request
 }
 
+// *******************************************************************
 //* Responder 是服务器对客户端的响应的接口
 type Responder interface {
 	JSON() []byte
@@ -72,8 +113,10 @@ type Responder interface {
 	Broadcast() bool
 	RemoveUUID()
 	Silence()
+	Done()
 }
 
+// *****************************************************************
 //* Response 这个是从服务器数据库查询到数据，返回给客户端的响应结果
 type Response struct {
 	Type      string                 `json:"type,omitempty"`
@@ -82,23 +125,38 @@ type Response struct {
 	broadcast bool
 }
 
+func newResponse() *Response {
+	resp := responsePool.Get().(*Response)
+	resp.Type = ""
+	resp.Payload = nil
+	resp.UUID = ""
+	resp.broadcast = false
+	return resp
+}
+
 // BuildFromRequest 从req，success构建
 func BuildFromRequest(responseType ConfigResponseType, req *Request, success, broadcast bool) *Response {
-	return &Response{
-		Type:      responseType(req.Type, success),
-		UUID:      req.UUID,
-		broadcast: broadcast,
-	}
+	resp := newResponse()
+
+	resp.Type = responseType(req.Type, success)
+	resp.UUID = req.UUID
+	resp.broadcast = broadcast
+	return resp
 }
 
 // 如果发生错误就直接生产错误的Response
 func BuildErrorResposeFromRequest(responseType ConfigResponseType, req *Request, err error) *Response {
-	return &Response{
-		Type:      responseType(req.Type, false),
-		UUID:      req.UUID,
-		Payload:   map[string]interface{}{"err": err.Error()},
-		broadcast: false,
-	}
+	resp := newResponse()
+
+	resp.Type = responseType(req.Type, false)
+	resp.UUID = req.UUID
+	resp.Payload = map[string]interface{}{"err": err.Error()}
+	resp.broadcast = false
+	return resp
+}
+
+func (resp *Response) Done() {
+	responsePool.Put(resp)
 }
 
 // Add payload field
@@ -141,6 +199,7 @@ func (resp *Response) Silence() {
 	resp.Add(Pair{Key: "silence", Value: true})
 }
 
+// ***********************************************************************
 //* RawResponse 就是把所有数据都直接放进去
 type RawResponse struct {
 	Type    string          `json:"type,omitempty"`
@@ -148,12 +207,20 @@ type RawResponse struct {
 	UUID    string          `json:"uuid,omitempty"`
 }
 
+func newRawResponse() *RawResponse {
+	rr := rawResponsePool.Get().(*RawResponse)
+	rr.Type = ""
+	rr.Payload = nil
+	rr.UUID = ""
+	return rr
+}
+
 func NewRawResponse(crt ConfigResponseType, req *Request, data []byte) *RawResponse {
-	return &RawResponse{
-		Type:    crt(req.Type, true),
-		Payload: data,
-		UUID:    req.UUID,
-	}
+	rr := newRawResponse()
+	rr.Type = crt(req.Type, true)
+	rr.Payload = data
+	rr.UUID = req.UUID
+	return rr
 }
 
 // JSON 实现Responser
@@ -172,9 +239,7 @@ func (rr RawResponse) CachePayload() []byte {
 // Broadcast ...
 func (rr RawResponse) Broadcast() bool { return false }
 
-func (resp *RawResponse) RemoveUUID() {
-	resp.UUID = ""
-}
+func (resp *RawResponse) RemoveUUID() { resp.UUID = "" }
 
 func (resp *RawResponse) Silence() {
 	var buf bytes.Buffer
@@ -183,4 +248,8 @@ func (resp *RawResponse) Silence() {
 	buf.WriteString(`"silence":true,`)
 	buf.Write(resp.Payload[1:])
 	resp.Payload = buf.Bytes()
+}
+
+func (resp *RawResponse) Done() {
+	rawResponsePool.Put(resp)
 }
