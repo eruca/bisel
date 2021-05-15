@@ -120,6 +120,10 @@ func (c *Context) exec() {
 func (ctx *Context) Finish() {
 	ctx.logResults()
 	ctx.dispose()
+	if ctx.Tabler != nil {
+		ctx.Tabler.Done()
+	}
+	ctx.Tabler = nil
 }
 
 func (ctx *Context) dispose() {
