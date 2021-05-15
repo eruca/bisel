@@ -115,9 +115,6 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 		send <- ctx.Responder.JSON()
 
 		if ctx.Responder.Broadcast() {
-			if connType == btypes.HTTP {
-				panic(`http 连接 不能广播`)
-			}
 			ctx.Responder.RemoveUUID()
 			ctx.Responder.Silence()
 			broadcast <- ws.BroadcastRequest{
