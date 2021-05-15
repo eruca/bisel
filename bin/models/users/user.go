@@ -47,10 +47,10 @@ func (j *User) Model() *btypes.GormModel {
 func (j *User) Register(handlers map[string]btypes.ContextConfig) {
 	// 这里的j实际上是Manager.New时传入的对象
 	// 这个对象应该一直都是空值，只是作为调用
-	handlers[tableName+"/query"] = btypes.QueryHandler(j, middlewares.TimeElapsed, models.JwtAuth, middlewares.UseCache)
-	handlers[tableName+"/upsert"] = btypes.UpsertHandler(j, middlewares.TimeElapsed, models.JwtAuth)
-	handlers[tableName+"/delete"] = btypes.DeleteHandler(j, middlewares.TimeElapsed, models.JwtAuth)
-	handlers[tableName+"/login"] = btypes.LoginHandler(j, &models.JwtSession{}, middlewares.TimeElapsed)
+	handlers[tableName+"/query"] = btypes.QueryHandler(&User{}, middlewares.TimeElapsed, models.JwtAuth, middlewares.UseCache)
+	handlers[tableName+"/upsert"] = btypes.UpsertHandler(&User{}, middlewares.TimeElapsed, models.JwtAuth)
+	handlers[tableName+"/delete"] = btypes.DeleteHandler(&User{}, middlewares.TimeElapsed, models.JwtAuth)
+	handlers[tableName+"/login"] = btypes.LoginHandler(&User{}, &models.JwtSession{}, middlewares.TimeElapsed)
 }
 
 func (j *User) MustAutoMigrate(db *btypes.DB) {
