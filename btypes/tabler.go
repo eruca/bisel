@@ -13,7 +13,7 @@ type Result struct {
 }
 
 type Tabler interface {
-	New() Tabler
+	// New() Tabler
 	FromRequest(json.RawMessage) Tabler
 
 	TableName() string
