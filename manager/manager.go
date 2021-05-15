@@ -179,6 +179,7 @@ func (manager *Manager) Connected(c chan<- []byte) {
 		if connecter, ok := tabler.(btypes.Connectter); ok {
 			responder := connecter.Push(manager.db, manager.cacher, manager.crt, manager.logger)
 			c <- responder.JSON()
+			responder.Done()
 		}
 	}
 }
@@ -189,6 +190,7 @@ func (manager *Manager) Push(send chan<- []byte, jwtSession btypes.Defaulter) {
 			if pusher.Auth(jwtSession) {
 				responder := pusher.Push(manager.db, manager.cacher, manager.crt, manager.logger)
 				send <- responder.JSON()
+				responder.Done()
 			}
 		}
 	}
