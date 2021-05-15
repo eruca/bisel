@@ -38,8 +38,8 @@ func NewCacher(logger Logger) *ARC {
 func (arc *ARC) Get(key string) ([]byte, bool) {
 	v, err := arc.cacher.Get(key)
 	if err != nil {
-		arc.logger.Errorf("获取数据:key:%s 发生错误:%v", key, err)
-		panic("获取数据错误")
+		arc.logger.Debugf("获取数据:key:%s 发生错误:%v", key, err)
+		return nil, false
 	}
 	data, ok := v.([]byte)
 	if !ok {
