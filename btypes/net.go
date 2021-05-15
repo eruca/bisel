@@ -215,12 +215,16 @@ func newRawResponse() *RawResponse {
 	return rr
 }
 
-func NewRawResponse(crt ConfigResponseType, req *Request, data []byte) *RawResponse {
+func NewRawResponseText(crt ConfigResponseType, req_type, uuid string, data []byte) *RawResponse {
 	rr := newRawResponse()
-	rr.Type = crt(req.Type, true)
+	rr.Type = crt(req_type, true)
 	rr.Payload = data
-	rr.UUID = req.UUID
+	rr.UUID = uuid
 	return rr
+}
+
+func NewRawResponse(crt ConfigResponseType, req *Request, data []byte) *RawResponse {
+	return NewRawResponseText(crt, req.Type, req.UUID, data)
 }
 
 // JSON 实现Responser

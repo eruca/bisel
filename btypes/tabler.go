@@ -71,7 +71,7 @@ func PushWithDefaultParameter(db *DB, cacher Cacher, cft ConfigResponseType, log
 	key := pc.QueryParams.BuildCacheKey(request_type)
 	data, ok := cacher.Get(key)
 	if ok {
-		rb := NewRawResponse(cft, NewRequestWithType(request_type), data)
+		rb := NewRawResponseText(cft, request_type, "", data)
 		logger.Infof("Use Cache: %s", string(rb.JSON()))
 		return rb
 	}
