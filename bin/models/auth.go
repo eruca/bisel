@@ -11,9 +11,14 @@ var (
 )
 
 type JwtSession struct {
+	ID   uint `json:"id,omitempty"`
 	Role uint `json:"role,omitempty"`
 }
 
 func (js *JwtSession) Default() btypes.Defaulter {
 	return &JwtSession{}
+}
+
+func (js *JwtSession) UserID() uint {
+	return js.ID
 }

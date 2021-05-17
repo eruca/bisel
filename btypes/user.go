@@ -24,6 +24,7 @@ type LoginTabler interface {
 }
 
 type Defaulter interface {
+	UserID() uint
 	Default() Defaulter
 }
 
