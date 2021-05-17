@@ -6,6 +6,7 @@ import (
 	"github.com/eruca/bisel/bin/models/journal"
 	"github.com/eruca/bisel/bin/models/users"
 	"github.com/eruca/bisel/btypes"
+	"github.com/eruca/bisel/cache"
 	"github.com/eruca/bisel/manager"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/sqlite"
@@ -34,7 +35,7 @@ func main() {
 	db = db.Debug()
 
 	// Manager
-	manager := manager.New(db, btypes.NewCacher(logging), logging, config, nil, &journal.Journal{}, &users.User{})
+	manager := manager.New(db, cache.New(logging), logging, config, nil, &journal.Journal{}, &users.User{})
 	// 配置gin
 	engine := gin.Default()
 	engine.Use(cors())

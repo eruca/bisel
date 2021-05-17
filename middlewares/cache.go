@@ -19,7 +19,7 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 	paramType := c.Parameters.ParamType
 	// 如果是write: upsert/delete,需删除缓存数据
 	if paramType == btypes.ParamUpsert || paramType == btypes.ParamDelete {
-		c.Cacher.Clear(c.TableName())
+		c.Cacher.ClearBuckets(c.TableName())
 		c.Next()
 		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("clear cache:" + c.TableName())}
 	}
@@ -32,9 +32,10 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 	}
 
 	cacheKey := params.BuildCacheKey(c.Request.Type)
-	if value, ok := c.Cacher.Get(cacheKey); ok {
-		c.Responder = btypes.NewRawResponse(c.ConfigResponseType, c.Request, value)
-		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString(value)}
+	bin := c.Cacher.GetBucket(c.TableName(), cacheKey)
+	if bin != nil {
+		c.Responder = btypes.NewRawResponse(c.ConfigResponseType, c.Request, bin)
+		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString(bin)}
 	}
 	return noExistInCache(c, params)
 }
@@ -50,7 +51,7 @@ func noExistInCache(c *btypes.Context, params *btypes.QueryParams) btypes.PairSt
 	key := params.BuildCacheKey(c.Request.Type)
 	// 设置缓存
 	// 只能缓存payload,如果缓存responder，则会加入uuid
-	c.Cacher.Set(c.Tabler.TableName(), key, c.Responder.CachePayload())
+	c.Cacher.SetBucket(c.Tabler.TableName(), key, c.Responder.CachePayload())
 
 	return btypes.PairStringer{
 		Key:   PairKeyCache,

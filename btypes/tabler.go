@@ -69,9 +69,10 @@ func PushWithDefaultParameter(db *DB, cacher Cacher, cft ConfigResponseType, log
 	// key是按照查询参数MD5计算出俩的hash值
 	request_type := tabler.TableName() + "/" + action
 	key := pc.QueryParams.BuildCacheKey(request_type)
-	data, ok := cacher.Get(key)
-	if ok {
-		rb := NewRawResponseText(cft, request_type, "", data)
+
+	bin := cacher.GetBucket(tabler.TableName(), key)
+	if bin != nil {
+		rb := NewRawResponseText(cft, request_type, "", bin)
 		logger.Infof("Use Cache: %s", string(rb.JSON()))
 		return rb
 	}
@@ -89,7 +90,7 @@ func PushWithDefaultParameter(db *DB, cacher Cacher, cft ConfigResponseType, log
 
 	// 进入缓存系统
 	// 设置缓存
-	cacher.Set(tabler.TableName(), key, resp.CachePayload())
+	cacher.SetBucket(tabler.TableName(), key, resp.CachePayload())
 
 	logger.Infof("Query Database: %s", string(resp.JSON()))
 
