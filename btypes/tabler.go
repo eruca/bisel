@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 )
 
+// ***********************************************************
 // Result 代表增删查修的结果
 // Payloads键值对是返回给客户端的数据
 // Broadcast 代表是否进行广播
@@ -12,6 +13,17 @@ type Result struct {
 	Broadcast bool
 }
 
+// **********************************************************
+// EditState:表格的某一项的编辑状态
+type EditState uint8
+
+const (
+	EditStateRead EditState = 1 << iota
+	EditStateWrite
+)
+
+// ***********************************************************
+// Tabler 代表一个数据表
 type Tabler interface {
 	New() Tabler
 	Done()
@@ -44,6 +56,7 @@ func FromRequestPayload(rw json.RawMessage, tabler Tabler) Tabler {
 	return tabler
 }
 
+// **********************************************************************
 // 推送时机
 type PushTimer uint8
 

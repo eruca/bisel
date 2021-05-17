@@ -97,6 +97,7 @@ func (manager *Manager) StartTasks(tasks ...btypes.Task) {
 
 func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.BroadcastRequest,
 	req *btypes.Request, httpReq *http.Request) (err error) {
+
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.crt,
 			manager.logger, manager.config.JWT, btypes.WEBSOCKET)
@@ -110,6 +111,25 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 		ctx.StartWorkFlow()
 		if ctx.Responder == nil {
 			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
+		}
+		// 登录请求，并且通过验证
+		if isLogin && ctx.Success && ctx.JwtSession != nil {
+			userid := ctx.JwtSession.UserID()
+			if data, ok := ctx.Cacher.Get(userid); !ok {
+				userData := &btypes.UserRuntimeData{
+					UserID: userid,
+					Send:   send,
+				}
+				ctx.Cacher.Set(userid, userData)
+			} else {
+				if userData, ok1 := data.(*btypes.UserRuntimeData); !ok1 {
+					ctx.Logger.Errorf("存储的信息不是 *UserRuntimeData")
+					panic("存储的信息不是 *UserRuntimeData")
+				} else {
+					userData.Send <- []byte(`{"type":"logout_success"}`)
+					userData.Send = send
+				}
+			}
 		}
 
 		send <- ctx.Responder.JSON()
