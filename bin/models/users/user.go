@@ -23,13 +23,13 @@ var (
 )
 
 type User struct {
-	btypes.GormModel
-	Account  string `json:"account,omitempty"`
-	Password string `json:"password,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Ismale   bool   `json:"ismale,omitempty"`
-	Age      uint8  `json:"age,omitempty"`
-	Role     uint64 `json:"role,omitempty"`
+	btypes.GormModel `mapstructure:",squash"`
+	Account          string `json:"account,omitempty"`
+	Password         string `json:"password,omitempty"`
+	Name             string `json:"name,omitempty"`
+	Ismale           bool   `json:"ismale,omitempty"`
+	Age              uint8  `json:"age,omitempty"`
+	Role             uint64 `json:"role,omitempty"`
 }
 
 func (j *User) GetAccount() btypes.PairStringer {
