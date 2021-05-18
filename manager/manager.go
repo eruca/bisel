@@ -131,7 +131,7 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 				} else {
 					// 如果未退出的情况下，有可能出现该连接已经断开
 					if !*wsDisconnected && userData.Send != nil {
-						userData.Send <- btypes.NewRawResponseText(manager.crt, "logout", "", []byte{}).JSON()
+						userData.Send <- btypes.NewRawResponseText(manager.crt, "logout", "", nil).JSON()
 					}
 					userData.Send = send
 				}
