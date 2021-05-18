@@ -37,13 +37,17 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 	})
 
 	// 构建读入信息后的处理函数
-	processMixHttpRequest := func(httpReq *http.Request) ws.Process {
+	processMixHttpRequest := func(httpReq *http.Request) (ws.Process, *bool) {
+		// 进入该函数，表示一条websocket连接
+		// 应该还是在单线程里执行
+		var websocketDisconneced bool
+
 		return func(send chan []byte, broadcast chan ws.BroadcastRequest, msg []byte) {
 			// 产生btypes.Request
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
 			manager.logger.Infof("websocket request from client: %-v\n", req)
-			manager.TakeActionWebsocket(send, broadcast, req, httpReq)
-		}
+			manager.TakeActionWebsocket(send, broadcast, req, httpReq, &websocketDisconneced)
+		}, &websocketDisconneced
 	}
 	// 连接成功后马上发送的数据
 	connected := func(send chan<- []byte) {
@@ -94,7 +98,7 @@ func (manager *Manager) StartTasks(tasks ...btypes.Task) {
 }
 
 func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.BroadcastRequest,
-	req *btypes.Request, httpReq *http.Request) (err error) {
+	req *btypes.Request, httpReq *http.Request, wsDisconnected *bool) (err error) {
 
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.crt,
@@ -110,6 +114,7 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 		if ctx.Responder == nil {
 			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
 		}
+
 		// 登录请求，并且通过验证
 		if isLogin && ctx.Success && ctx.JwtSession != nil {
 			userid := ctx.JwtSession.UserID()
@@ -124,7 +129,10 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 					ctx.Logger.Errorf("存储的信息不是 *UserRuntimeData")
 					panic("存储的信息不是 *UserRuntimeData")
 				} else {
-					userData.Send <- []byte(`{"type":"logout_success"}`)
+					// 如果未退出的情况下，有可能出现该连接已经断开
+					if !*wsDisconnected {
+						userData.Send <- btypes.NewRawResponseText(manager.crt, "logout", "", []byte{}).JSON()
+					}
 					userData.Send = send
 				}
 			}

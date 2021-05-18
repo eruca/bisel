@@ -32,11 +32,12 @@ type Client struct {
 	send chan []byte
 }
 
-func (c *Client) readPump(hub *Hub, fn Process, logger btypes.Logger) {
+func (c *Client) readPump(hub *Hub, fn Process, disconnected *bool, logger btypes.Logger) {
 	defer func() {
 		logger.Infof("readPump client unregister conn close")
 		hub.unregister <- c
 		c.conn.Close()
+		*disconnected = true
 	}()
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })

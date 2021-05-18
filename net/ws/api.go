@@ -9,7 +9,7 @@ import (
 )
 
 // ProcessMixHttpRequest 混入*http.Request
-type ProcessMixHttpRequest func(req *http.Request) Process
+type ProcessMixHttpRequest func(req *http.Request) (Process, *bool)
 
 // Process 是外部函数需要接收websocket的广播、发送、消息, req 代表连接的状态
 type Process func(send chan []byte, broadcast chan BroadcastRequest, msg []byte)
@@ -55,7 +55,8 @@ func WebsocketHandler(process ProcessMixHttpRequest, connected Connected, logger
 		}
 		hub.register <- client
 
-		go client.readPump(hub, process(r), logger)
+		fn, disconnected := process(r)
+		go client.readPump(hub, fn, disconnected, logger)
 		go client.writePump(logger)
 
 		if connected != nil {
