@@ -9,11 +9,11 @@ import (
 
 // Model ...
 type GormModel struct {
-	ID        uint           `json:"id,omitempty" gorm:"primarykey" mapstructure:"id,squash"`
-	CreatedAt time.Time      `json:"created_at,omitempty" mapstructure:"created_at,squash"`
-	UpdatedAt time.Time      `json:"updated_at,omitempty" mapstructure:"updated_at,squash"`
+	ID        uint           `json:"id,omitempty" gorm:"primarykey"`
+	CreatedAt time.Time      `json:"created_at,omitempty"`
+	UpdatedAt time.Time      `json:"updated_at,omitempty"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
-	Version   uint           `json:"version,omitempty" gorm:"default:1" mapstructure:"version,squash"`
+	Version   uint           `json:"version,omitempty" gorm:"default:1"`
 }
 
 // RowID 可以直接在DBmodel内部实现
