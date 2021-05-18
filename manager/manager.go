@@ -62,7 +62,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 	return manager
 }
 
-// New ...
+// New Manager
 func New(gdb *gorm.DB, cacher btypes.Cacher, logger btypes.Logger, config btypes.Config, crt btypes.ConfigResponseType, tablers ...btypes.Tabler) *Manager {
 	db := &btypes.DB{Gorm: gdb}
 	handlers := make(map[string]btypes.ContextConfig)
@@ -76,7 +76,7 @@ func New(gdb *gorm.DB, cacher btypes.Cacher, logger btypes.Logger, config btypes
 		crt = defaultResponseType
 	}
 
-	manager := &Manager{
+	return &Manager{
 		db:       db,
 		cacher:   cacher,
 		tablers:  tablers,
@@ -85,8 +85,6 @@ func New(gdb *gorm.DB, cacher btypes.Cacher, logger btypes.Logger, config btypes
 		config:   config,
 		logger:   logger,
 	}
-
-	return manager
 }
 
 func (manager *Manager) StartTasks(tasks ...btypes.Task) {
