@@ -84,7 +84,7 @@ func (app *AppConfig) SetDefault() {
 	}
 
 	if app.QuerySize == 0 {
-		app.QuerySize = 20
+		app.QuerySize = DEFAULT_QUERY_SIZE
 	}
 }
 
