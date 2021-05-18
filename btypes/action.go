@@ -34,6 +34,8 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 			switch pt {
 			case ParamLogin:
 				result, err = pc.Do(c.Injected, tabler, jwtSession)
+				// 赋值给Context
+				c.JwtSession = jwtSession
 			case ParamLogout:
 				// Logout 没有内部的操作
 				// 实际上登录患者运行时的数据存储在Cacher里user_id => UserRuntimeData
