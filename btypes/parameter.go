@@ -21,6 +21,9 @@ const (
 	ParamUpsert
 	ParamDelete
 	ParamLogin
+	ParamLogout
+	ParamEditOn
+	ParamEditOff
 )
 
 func (p ParamType) String() string {
@@ -33,6 +36,12 @@ func (p ParamType) String() string {
 		return "ParamDelete"
 	case ParamLogin:
 		return "ParamLogin"
+	case ParamLogout:
+		return "ParamLogout"
+	case ParamEditOn:
+		return "ParamEditOn"
+	case ParamEditOff:
+		return "ParamEditOff"
 	}
 	return ""
 }
@@ -67,7 +76,7 @@ func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) (pc 
 				panic(err)
 			}
 		}
-	case ParamUpsert, ParamDelete, ParamLogin:
+	case ParamUpsert, ParamDelete, ParamLogin, ParamLogout, ParamEditOn, ParamEditOff:
 		pc.ParamType = pt
 		if rw == nil {
 			// todo: 如果发送的信息，没有信息体，是否需要panic
@@ -104,6 +113,12 @@ func (pc *ParamsContext) Assemble(value fmt.Stringer) PairStringer {
 		return PairStringer{Key: "DELETE", Value: value}
 	case ParamLogin:
 		return PairStringer{Key: "LOGIN", Value: value}
+	case ParamLogout:
+		return PairStringer{Key: "LOGOUT", Value: value}
+	case ParamEditOn:
+		return PairStringer{Key: "EditOn", Value: value}
+	case ParamEditOff:
+		return PairStringer{Key: "EditOff", Value: value}
 	default:
 		panic("never happen")
 	}

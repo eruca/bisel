@@ -18,10 +18,23 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 
 	paramType := c.Parameters.ParamType
 	// 如果是write: upsert/delete,需删除缓存数据
-	if paramType == btypes.ParamUpsert || paramType == btypes.ParamDelete {
+	switch paramType {
+	case btypes.ParamUpsert, btypes.ParamDelete:
 		c.Cacher.ClearBuckets(c.TableName())
 		c.Next()
 		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("clear cache:" + c.TableName())}
+	case btypes.ParamLogin:
+		c.Next()
+		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("Login")}
+	case btypes.ParamLogout:
+		c.Next()
+		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("Logout")}
+	case btypes.ParamEditOn:
+		c.Next()
+		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("Edit On")}
+	case btypes.ParamEditOff:
+		c.Next()
+		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("Edit Off")}
 	}
 
 	params := c.Parameters.QueryParams

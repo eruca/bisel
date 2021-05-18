@@ -31,9 +31,52 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 
 			// ParamLogin 是构造jwtSession
 			// 其他是使用jwtSession
-			if pt == ParamLogin {
+			switch pt {
+			case ParamLogin:
 				result, err = pc.Do(c.Injected, tabler, jwtSession)
-			} else {
+			case ParamLogout:
+				// Logout 没有内部的操作
+				// 实际上登录患者运行时的数据存储在Cacher里user_id => UserRuntimeData
+				// 进行清除工作
+				if !c.Cacher.Remove(c.Tabler.Model().ID) {
+					c.Logger.Errorf("%d 不在Cache内", c.Tabler.Model().ID)
+					panic("logout 失败")
+				}
+			case ParamEditOn:
+				v, ok := c.Cacher.Get(c.Tabler.Model().ID)
+				if !ok {
+					c.Logger.Errorf("%s:%d 不在Cache内", c.TableName(), c.Tabler.Model().ID)
+					panic("用户不在Cache内")
+				}
+				urd, ok := v.(*UserRuntimeData)
+				if !ok {
+					c.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", c.TableName(), c.Tabler.Model().ID)
+					panic("存储的数据不是*UserRuntimeData")
+				}
+				if urd.TableName != "" || urd.TableID > 0 {
+					err = ErrTableIsOnEditting
+					break
+				}
+				urd.TableName = c.TableName()
+				urd.TableID = c.Tabler.Model().ID
+			case ParamEditOff:
+				v, ok := c.Cacher.Get(c.Tabler.Model().ID)
+				if !ok {
+					c.Logger.Errorf("%s:%d 不在Cache内", c.TableName(), c.Tabler.Model().ID)
+					panic("用户不在Cache内")
+				}
+				urd, ok := v.(*UserRuntimeData)
+				if !ok {
+					c.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", c.TableName(), c.Tabler.Model().ID)
+					panic("存储的数据不是*UserRuntimeData")
+				}
+				if urd.TableName == "" || urd.TableID == 0 {
+					err = ErrTableIsOffEditting
+					break
+				}
+				urd.TableName = ""
+				urd.TableID = 0
+			default:
 				result, err = pc.Do(c.Injected, tabler, c.JwtSession)
 			}
 
@@ -66,4 +109,16 @@ func DeleteHandler(tabler Tabler, handlers ...Action) ContextConfig {
 
 func LoginHandler(tabler Tabler, jwtSession Defaulter, handlers ...Action) ContextConfig {
 	return handlerFunc(tabler, ParamLogin, jwtSession, handlers...)
+}
+
+func LogoutHandler(tabler Tabler, handlers ...Action) ContextConfig {
+	return handlerFunc(tabler, ParamLogout, nil, handlers...)
+}
+
+func EditOnHandler(tabler Tabler, handlers ...Action) ContextConfig {
+	return handlerFunc(tabler, ParamEditOn, nil, handlers...)
+}
+
+func EditOffHandler(tabler Tabler, handlers ...Action) ContextConfig {
+	return handlerFunc(tabler, ParamEditOff, nil, handlers...)
 }
