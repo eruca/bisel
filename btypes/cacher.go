@@ -6,6 +6,7 @@ package btypes
 type Cacher interface {
 	Get(interface{}) (interface{}, bool)
 	Set(interface{}, interface{})
+	Remove(interface{}) bool
 	GetBucket(string, string) []byte
 	SetBucket(string, string, []byte)
 	ClearBuckets(...string)

@@ -13,6 +13,8 @@ const (
 	cacheSize = 1024
 )
 
+var _ btypes.Cacher = (*Cache)(nil)
+
 type Cache struct {
 	*ccache.LayeredCache
 	gcache.Cache
@@ -65,4 +67,8 @@ func (c *Cache) Get(key interface{}) (interface{}, bool) {
 		return nil, false
 	}
 	return v, true
+}
+
+func (c *Cache) Remove(key interface{}) bool {
+	return c.Cache.Remove(key)
 }
