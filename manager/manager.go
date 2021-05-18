@@ -130,7 +130,7 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 					panic("存储的信息不是 *UserRuntimeData")
 				} else {
 					// 如果未退出的情况下，有可能出现该连接已经断开
-					if !*wsDisconnected {
+					if !*wsDisconnected && userData.Send != nil {
 						userData.Send <- btypes.NewRawResponseText(manager.crt, "logout", "", []byte{}).JSON()
 					}
 					userData.Send = send
