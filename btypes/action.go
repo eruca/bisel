@@ -45,14 +45,15 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 					panic("logout 失败")
 				}
 			case ParamEditOn:
-				v, ok := c.Cacher.Get(c.Tabler.Model().ID)
+				loginer_id := c.JwtSession.UserID()
+				v, ok := c.Cacher.Get(loginer_id)
 				if !ok {
-					c.Logger.Errorf("%s:%d 不在Cache内", c.TableName(), c.Tabler.Model().ID)
+					c.Logger.Errorf("%s:%d 不在Cache内", c.TableName(), loginer_id)
 					panic("用户不在Cache内")
 				}
 				urd, ok := v.(*UserRuntimeData)
 				if !ok {
-					c.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", c.TableName(), c.Tabler.Model().ID)
+					c.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", c.TableName(), loginer_id)
 					panic("存储的数据不是*UserRuntimeData")
 				}
 				if urd.TableName != "" || urd.TableID > 0 {
@@ -62,14 +63,15 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 				urd.TableName = c.TableName()
 				urd.TableID = c.Tabler.Model().ID
 			case ParamEditOff:
-				v, ok := c.Cacher.Get(c.Tabler.Model().ID)
+				loginer_id := c.JwtSession.UserID()
+				v, ok := c.Cacher.Get(loginer_id)
 				if !ok {
-					c.Logger.Errorf("%s:%d 不在Cache内", c.TableName(), c.Tabler.Model().ID)
+					c.Logger.Errorf("%s:%d 不在Cache内", c.TableName(), loginer_id)
 					panic("用户不在Cache内")
 				}
 				urd, ok := v.(*UserRuntimeData)
 				if !ok {
-					c.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", c.TableName(), c.Tabler.Model().ID)
+					c.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", c.TableName(), loginer_id)
 					panic("存储的数据不是*UserRuntimeData")
 				}
 				if urd.TableName == "" || urd.TableID == 0 {
