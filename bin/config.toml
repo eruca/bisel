@@ -1,9 +1,0 @@
-[App]
-
-[Logger]
-Filename = "logs/zap.log"
-Level = "info"
-StderrColor = true
-StderrLevel = "info"
-
-[JWT]
