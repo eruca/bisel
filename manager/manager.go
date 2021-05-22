@@ -153,7 +153,8 @@ func (manager *Manager) TakeActionWebsocket(client *ws.Client, broadcast chan ws
 						if userData.Client.Send != nil {
 							userData.Client.Send <- btypes.NewRawResponseText(manager.crt, "users/logout", "", []byte("{}")).JSON()
 						}
-						userData.Client.Send = client.Send
+						// userData.Client.Send = client.Send
+						ctx.Cacher.Set(userid, &UserRuntimeData{UserID: userid, Client: client})
 					}
 				}
 
