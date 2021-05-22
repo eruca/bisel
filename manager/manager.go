@@ -167,6 +167,14 @@ func (manager *Manager) TakeActionWebsocket(client *ws.Client, broadcast chan ws
 					panic("logout 失败")
 				}
 			case btypes.ParamEditOn:
+				key := fmt.Sprintf("%s/%d", ctx.TableName(), ctx.Tabler.Model().ID)
+				if _, ok := ctx.Cacher.Get(key); ok {
+					err = btypes.ErrTableIsOnEditting
+					break
+				} else {
+					ctx.Cacher.Set(key, struct{}{})
+				}
+
 				loginer_id := ctx.JwtSession.UserID()
 				v, ok := ctx.Cacher.Get(loginer_id)
 				if !ok {
@@ -184,7 +192,16 @@ func (manager *Manager) TakeActionWebsocket(client *ws.Client, broadcast chan ws
 				}
 				urd.TableName = ctx.TableName()
 				urd.TableID = ctx.Tabler.Model().ID
+
 			case btypes.ParamEditOff:
+				key := fmt.Sprintf("%s/%d", ctx.TableName(), ctx.Tabler.Model().ID)
+				if _, ok := ctx.Cacher.Get(key); !ok {
+					err = btypes.ErrTableIsOffEditting
+					break
+				} else {
+					ctx.Cacher.Remove(key)
+				}
+
 				loginer_id := ctx.JwtSession.UserID()
 				v, ok := ctx.Cacher.Get(loginer_id)
 				if !ok {
@@ -202,6 +219,12 @@ func (manager *Manager) TakeActionWebsocket(client *ws.Client, broadcast chan ws
 				}
 				urd.TableName = ""
 				urd.TableID = 0
+			}
+
+			if err != nil {
+				resp := btypes.BuildErrorResposeFromRequest(manager.crt, req, err)
+				client.Send <- resp.JSON()
+				return
 			}
 		}
 
