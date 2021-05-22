@@ -105,7 +105,7 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 			manager.logger, manager.config.JWT, btypes.WEBSOCKET)
 
 		// 在这里会对paramContext进行初始化, 还没有开始走流程
-		isLogin := contextConfig(ctx)
+		paramType := contextConfig(ctx)
 
 		// StartWorkFlow 会启动WorkFlow
 		// 并且会走完ctx.Executor,并且会生成一个Responder
@@ -115,8 +115,7 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
 		}
 
-		// 登录请求，并且通过验证
-		if isLogin && ctx.Success && ctx.JwtSession != nil {
+		if ctx.Success && ctx.JwtSession != nil {
 			userid := ctx.JwtSession.UserID()
 			if data, ok := ctx.Cacher.Get(userid); !ok {
 				userData := &btypes.UserRuntimeData{
@@ -149,8 +148,8 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 			}
 		}
 
-		if isLogin && ctx.Success {
-			manager.Push(send, ctx.JwtSession)
+		if paramType == btypes.ParamLogin && ctx.Success {
+			manager.Push(client.Send, ctx.JwtSession)
 		}
 
 		ctx.Finish()
