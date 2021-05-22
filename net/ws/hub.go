@@ -33,12 +33,13 @@ func (h *Hub) run() {
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
-				close(client.send)
+				close(client.Send)
+				client.Send = nil
 			}
 		case req := <-h.broadcast:
 			for client := range h.clients {
-				if client.send != req.Producer {
-					client.send <- req.Data
+				if client.Send != req.Producer {
+					client.Send <- req.Data
 				}
 			}
 		}

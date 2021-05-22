@@ -9,10 +9,12 @@ import (
 )
 
 // ProcessMixHttpRequest 混入*http.Request
-type ProcessMixHttpRequest func(req *http.Request) (Process, *bool)
+type ProcessMixHttpRequest func(req *http.Request) (Process, ClearUserID)
 
 // Process 是外部函数需要接收websocket的广播、发送、消息, req 代表连接的状态
-type Process func(send chan []byte, broadcast chan BroadcastRequest, msg []byte)
+type Process func(client *Client, broadcast chan BroadcastRequest, msg []byte)
+
+type ClearUserID func(uint)
 
 // Connected 代表如果连接一旦建立，就通过send向客户端发送数据
 type Connected func(send chan<- []byte)
@@ -51,18 +53,18 @@ func WebsocketHandler(process ProcessMixHttpRequest, connected Connected, logger
 
 		client := &Client{
 			conn: conn,
-			send: make(chan []byte, runtime.NumCPU()*2),
+			Send: make(chan []byte, runtime.NumCPU()*2),
 		}
 		hub.register <- client
 
-		fn, disconnected := process(r)
-		go client.readPump(hub, fn, disconnected, logger)
+		fn, clear := process(r)
+		go client.readPump(hub, fn, clear, logger)
 		go client.writePump(logger)
 
 		if connected != nil {
 			// 预推送数据, 如果预推送的量超过send的cache量，就会阻塞,
 			// 必须在client.writePump启动后再推送
-			connected(client.send)
+			connected(client.Send)
 		}
 	}
 }

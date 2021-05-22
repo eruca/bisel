@@ -28,16 +28,17 @@ var upgrader = websocket.Upgrader{
 
 // Client ...
 type Client struct {
-	conn *websocket.Conn
-	send chan []byte
+	conn   *websocket.Conn
+	Send   chan []byte
+	Userid uint
 }
 
-func (c *Client) readPump(hub *Hub, fn Process, disconnected *bool, logger btypes.Logger) {
+func (c *Client) readPump(hub *Hub, fn Process, clear ClearUserID, logger btypes.Logger) {
 	defer func() {
 		logger.Infof("readPump client unregister conn close")
 		hub.unregister <- c
 		c.conn.Close()
-		*disconnected = true
+		clear(c.Userid)
 	}()
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
@@ -53,7 +54,7 @@ func (c *Client) readPump(hub *Hub, fn Process, disconnected *bool, logger btype
 			break
 		}
 
-		fn(c.send, hub.broadcast, message)
+		fn(c, hub.broadcast, message)
 	}
 }
 
@@ -68,7 +69,7 @@ func (c *Client) writePump(logger btypes.Logger) {
 
 	for {
 		select {
-		case message, ok := <-c.send:
+		case message, ok := <-c.Send:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				c.conn.WriteMessage(websocket.CloseMessage, nil)
