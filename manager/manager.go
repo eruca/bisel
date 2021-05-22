@@ -22,6 +22,17 @@ type Manager struct {
 	logger   btypes.Logger
 }
 
+// UserRunTimeData 代表登录用户的信息，保存在运行时，主要是保存在Cache里
+type UserRuntimeData struct {
+	// 在用户表的ID
+	UserID uint
+	Client *ws.Client // 该用户的send channel
+
+	// 正在编辑的表
+	TableName string
+	TableID   uint
+}
+
 // InitSystem 分别启动http,websocket
 // 返回可以启动链式操作StartTask
 // @afterConnected => 表示除tabler实现Connectter外，其他想要传送的数据
@@ -37,17 +48,17 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 	})
 
 	// 构建读入信息后的处理函数
-	processMixHttpRequest := func(httpReq *http.Request) (ws.Process, *bool) {
+	processMixHttpRequest := func(httpReq *http.Request) (ws.Process, ws.ClearUserID) {
 		// 进入该函数，表示一条websocket连接
 		// 应该还是在单线程里执行
-		var websocketDisconneced bool
+		// var websocketDisconneced bool
 
-		return func(send chan []byte, broadcast chan ws.BroadcastRequest, msg []byte) {
+		return func(client *ws.Client, broadcast chan ws.BroadcastRequest, msg []byte) {
 			// 产生btypes.Request
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
 			manager.logger.Infof("websocket request from client: %-v\n", req)
-			manager.TakeActionWebsocket(send, broadcast, req, httpReq, &websocketDisconneced)
-		}, &websocketDisconneced
+			manager.TakeActionWebsocket(client, broadcast, req, httpReq)
+		}, manager.ClearUserID
 	}
 	// 连接成功后马上发送的数据
 	connected := func(send chan<- []byte) {
@@ -64,6 +75,10 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 	})
 
 	return manager
+}
+
+func (manager *Manager) ClearUserID(userid uint) {
+	manager.cacher.Remove(userid)
 }
 
 // New Manager
@@ -97,8 +112,8 @@ func (manager *Manager) StartTasks(tasks ...btypes.Task) {
 	}
 }
 
-func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.BroadcastRequest,
-	req *btypes.Request, httpReq *http.Request, wsDisconnected *bool) (err error) {
+func (manager *Manager) TakeActionWebsocket(client *ws.Client, broadcast chan ws.BroadcastRequest,
+	req *btypes.Request, httpReq *http.Request) (err error) {
 
 	if contextConfig, ok := manager.handlers[req.Type]; ok {
 		ctx := btypes.NewContext(manager.db, manager.cacher, req, httpReq, manager.crt,
@@ -117,34 +132,86 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 
 		if ctx.Success && ctx.JwtSession != nil {
 			userid := ctx.JwtSession.UserID()
-			if data, ok := ctx.Cacher.Get(userid); !ok {
-				userData := &btypes.UserRuntimeData{
-					UserID: userid,
-					Send:   send,
-				}
-				ctx.Cacher.Set(userid, userData)
-			} else {
-				if userData, ok1 := data.(*btypes.UserRuntimeData); !ok1 {
-					ctx.Logger.Errorf("存储的信息不是 *UserRuntimeData")
-					panic("存储的信息不是 *UserRuntimeData")
-				} else {
-					// 如果未退出的情况下，有可能出现该连接已经断开
-					if !*wsDisconnected && userData.Send != nil {
-						userData.Send <- btypes.NewRawResponseText(manager.crt, "users/logout", "", []byte("{}")).JSON()
+
+			switch paramType {
+			// 登录请求，并且通过验证
+			case btypes.ParamLogin:
+				client.Userid = userid
+
+				if data, ok := ctx.Cacher.Get(userid); !ok {
+					userData := &UserRuntimeData{
+						UserID: userid,
+						Client: client,
 					}
-					userData.Send = send
+					ctx.Cacher.Set(userid, userData)
+				} else {
+					if userData, ok1 := data.(*UserRuntimeData); !ok1 {
+						ctx.Logger.Errorf("存储的信息不是 *UserRuntimeData")
+						panic("存储的信息不是 *UserRuntimeData")
+					} else {
+						// 如果未退出的情况下，有可能出现该连接已经断开
+						if userData.Client.Send != nil {
+							userData.Client.Send <- btypes.NewRawResponseText(manager.crt, "users/logout", "", []byte("{}")).JSON()
+						}
+						userData.Client.Send = client.Send
+					}
 				}
+
+			case btypes.ParamLogout:
+				// Logout 没有内部的操作
+				// 实际上登录患者运行时的数据存储在Cacher里user_id => UserRuntimeData
+				// 进行清除工作
+				if !ctx.Cacher.Remove(userid) {
+					ctx.Logger.Errorf("%d 不在Cache内", userid)
+					panic("logout 失败")
+				}
+			case btypes.ParamEditOn:
+				loginer_id := ctx.JwtSession.UserID()
+				v, ok := ctx.Cacher.Get(loginer_id)
+				if !ok {
+					ctx.Logger.Errorf("%s:%d 不在Cache内", ctx.TableName(), loginer_id)
+					panic("用户不在Cache内")
+				}
+				urd, ok := v.(*UserRuntimeData)
+				if !ok {
+					ctx.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", ctx.TableName(), loginer_id)
+					panic("存储的数据不是*UserRuntimeData")
+				}
+				if urd.TableName != "" || urd.TableID > 0 {
+					err = btypes.ErrTableIsOnEditting
+					break
+				}
+				urd.TableName = ctx.TableName()
+				urd.TableID = ctx.Tabler.Model().ID
+			case btypes.ParamEditOff:
+				loginer_id := ctx.JwtSession.UserID()
+				v, ok := ctx.Cacher.Get(loginer_id)
+				if !ok {
+					ctx.Logger.Errorf("%s:%d 不在Cache内", ctx.TableName(), loginer_id)
+					panic("用户不在Cache内")
+				}
+				urd, ok := v.(*UserRuntimeData)
+				if !ok {
+					ctx.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", ctx.TableName(), loginer_id)
+					panic("存储的数据不是*UserRuntimeData")
+				}
+				if urd.TableName == "" || urd.TableID == 0 {
+					err = btypes.ErrTableIsOffEditting
+					break
+				}
+				urd.TableName = ""
+				urd.TableID = 0
 			}
 		}
 
-		send <- ctx.Responder.JSON()
+		client.Send <- ctx.Responder.JSON()
 
 		if ctx.Responder.Broadcast() {
 			ctx.Responder.RemoveUUID()
 			ctx.Responder.Silence()
 			broadcast <- ws.BroadcastRequest{
 				Data:     ctx.Responder.JSON(),
-				Producer: send,
+				Producer: client.Send,
 			}
 		}
 
@@ -156,7 +223,7 @@ func (manager *Manager) TakeActionWebsocket(send chan []byte, broadcast chan ws.
 	} else {
 		resp := btypes.BuildErrorResposeFromRequest(manager.crt, req,
 			fmt.Errorf("%q router not implemented yet", req.Type))
-		send <- resp.JSON()
+		client.Send <- resp.JSON()
 	}
 
 	return

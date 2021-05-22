@@ -12,17 +12,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// UserRunTimeData 代表登录用户的信息，保存在运行时，主要是保存在Cache里
-type UserRuntimeData struct {
-	// 在用户表的ID
-	UserID uint
-	Send   chan []byte // 该用户的send channel
-
-	// 正在编辑的表
-	TableName string
-	TableID   uint
-}
-
 type Loginer interface {
 	GetAccount() PairStringer
 	GetPassword() PairStringer
