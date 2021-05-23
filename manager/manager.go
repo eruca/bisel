@@ -42,7 +42,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		router := fmt.Sprintf("%s/%s", table, crud)
 		// 产生btypes.Request
 		req := btypes.FromHttpRequest(router, c.Request.Body)
-		manager.logger.Infof("http request from client: %-v\n", req)
+		manager.logger.Debugf("\nhttp request from client: %-v", req)
 
 		manager.TakeActionHttp(c.Writer, req, c.Request)
 	})
