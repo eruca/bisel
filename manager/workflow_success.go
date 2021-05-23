@@ -49,6 +49,7 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 	case btypes.ParamEditOn:
 		key := fmt.Sprintf("%s/%d", ctx.TableName(), ctx.Tabler.Model().ID)
 		if _, ok := ctx.Cacher.Get(key); ok {
+			ctx.Logger.Errorf("%s 已经在编辑中", key)
 			err = btypes.ErrTableIsOnEditting
 			break
 		} else {
@@ -76,6 +77,7 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 	case btypes.ParamEditOff:
 		key := fmt.Sprintf("%s/%d", ctx.TableName(), ctx.Tabler.Model().ID)
 		if _, ok := ctx.Cacher.Get(key); !ok {
+			ctx.Logger.Errorf("%s 不在编辑中", key)
 			err = btypes.ErrTableIsOffEditting
 			break
 		} else {
