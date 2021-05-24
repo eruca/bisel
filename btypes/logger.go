@@ -145,7 +145,7 @@ type stderr struct {
 }
 
 func (sd *stderr) Debugf(tmpl string, args ...interface{}) {
-	if sd.level >= LogDebug {
+	if sd.level <= LogDebug {
 		text := fmt.Sprintf(tmpl, args...)
 
 		levelTmpl := debugStr
@@ -157,7 +157,7 @@ func (sd *stderr) Debugf(tmpl string, args ...interface{}) {
 }
 
 func (sd *stderr) Infof(tmpl string, args ...interface{}) {
-	if sd.level >= LogInfo {
+	if sd.level <= LogInfo {
 		text := fmt.Sprintf(tmpl, args...)
 		levelTmpl := infoStr
 		if sd.colorful {
@@ -168,7 +168,7 @@ func (sd *stderr) Infof(tmpl string, args ...interface{}) {
 }
 
 func (sd *stderr) Warnf(tmpl string, args ...interface{}) {
-	if sd.level >= LogWarn {
+	if sd.level <= LogWarn {
 		text := fmt.Sprintf(tmpl, args...)
 		levelTmpl := warnStr
 		if sd.colorful {
@@ -179,7 +179,7 @@ func (sd *stderr) Warnf(tmpl string, args ...interface{}) {
 }
 
 func (sd *stderr) Errorf(tmpl string, args ...interface{}) {
-	if sd.level >= LogError {
+	if sd.level <= LogError {
 		text := fmt.Sprintf(tmpl, args...)
 		levelTmpl := errStr
 		if sd.colorful {
