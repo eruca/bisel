@@ -29,31 +29,6 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 				err      error
 			)
 
-			// if pt == ParamLogin {
-
-			// 	if data, ok := c.Cacher.Get(userid); !ok {
-			// 		userData := &loginer.UserRuntimeData{
-			// 			UserID: userid,
-			// 			Client: client,
-			// 		}
-			// 		ctx.Cacher.Set(userid, userData)
-			// 	} else {
-			// 		if userData, ok1 := data.(*UserRuntimeData); !ok1 {
-			// 			ctx.Logger.Errorf("存储的信息不是 *UserRuntimeData")
-			// 			panic("存储的信息不是 *UserRuntimeData")
-			// 		} else {
-			// 			// 如果未退出的情况下，有可能出现该连接已经断开
-			// 			if userData.Client.Send != nil {
-			// 				userData.Client.Send <- btypes.NewRawResponseText(manager.crt, "users/logout", "", []byte("{}")).JSON()
-			// 			}
-			// 			userData.Client.Send = client.Send
-			// 		}
-			// 	}
-			// } else {
-			// 	userid := c.JwtSession.UserID()
-
-			// }
-
 			// ParamLogin 是构造jwtSession
 			// 其他是使用jwtSession
 			switch pt {
@@ -61,55 +36,13 @@ func handlerFunc(tabler Tabler, pt ParamType, jwtSession Defaulter, handlers ...
 				result, err = pc.Do(c.Injected, tabler, jwtSession)
 				// 赋值给Context
 				c.JwtSession = jwtSession
+
 			case ParamUpsert, ParamDelete, ParamQuery:
 				result, err = pc.Do(c.Injected, tabler, c.JwtSession)
-			// case ParamLogout:
-			// 	// Logout 没有内部的操作
-			// 	// 实际上登录患者运行时的数据存储在Cacher里user_id => UserRuntimeData
-			// 	// 进行清除工作
-			// 	if !c.Cacher.Remove(c.Tabler.Model().ID) {
-			// 		c.Logger.Errorf("%d 不在Cache内", c.Tabler.Model().ID)
-			// 		panic("logout 失败")
-			// 	}
-			// case ParamEditOn:
-			// 	loginer_id := c.JwtSession.UserID()
-			// 	v, ok := c.Cacher.Get(loginer_id)
-			// 	if !ok {
-			// 		c.Logger.Errorf("%s:%d 不在Cache内", c.TableName(), loginer_id)
-			// 		panic("用户不在Cache内")
-			// 	}
-			// 	urd, ok := v.(*UserRuntimeData)
-			// 	if !ok {
-			// 		c.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", c.TableName(), loginer_id)
-			// 		panic("存储的数据不是*UserRuntimeData")
-			// 	}
-			// 	if urd.TableName != "" || urd.TableID > 0 {
-			// 		err = ErrTableIsOnEditting
-			// 		break
-			// 	}
-			// 	urd.TableName = c.TableName()
-			// 	urd.TableID = c.Tabler.Model().ID
-			// case ParamEditOff:
-			// 	loginer_id := c.JwtSession.UserID()
-			// 	v, ok := c.Cacher.Get(loginer_id)
-			// 	if !ok {
-			// 		c.Logger.Errorf("%s:%d 不在Cache内", c.TableName(), loginer_id)
-			// 		panic("用户不在Cache内")
-			// 	}
-			// 	urd, ok := v.(*UserRuntimeData)
-			// 	if !ok {
-			// 		c.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", c.TableName(), loginer_id)
-			// 		panic("存储的数据不是*UserRuntimeData")
-			// 	}
-			// 	if urd.TableName == "" || urd.TableID == 0 {
-			// 		err = ErrTableIsOffEditting
-			// 		break
-			// 	}
-			// 	urd.TableName = ""
-			// 	urd.TableID = 0
+
 			default:
-				c.Logger.Debugf("HandlerFunc: %s", pt)
 			}
+			c.Logger.Debugf("HandlerFunc: %s", pt)
 
 			if err != nil {
 				response = BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
