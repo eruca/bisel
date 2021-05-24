@@ -130,6 +130,7 @@ func (manager *Manager) TakeActionWebsocket(client *ws.Client, broadcast chan ws
 			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
 		}
 
+		ctx.Logger.Debugf("ctx.Success = %t AND ctx.JwtSession = %v", ctx.Success, ctx.JwtSession)
 		if ctx.Success && ctx.JwtSession != nil {
 			err = manager.workflowSuccess(ctx, paramType, client, req)
 			// 如果发生错误，直接返回给客户端，因为涉及状态及登录、登出，HandlerFunc直接返回成功
