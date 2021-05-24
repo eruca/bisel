@@ -99,7 +99,7 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 			ctx.Logger.Errorf("userid:%d 不在Cache内", userid)
 			panic("用户不在Cache内")
 		}
-		ctx.Logger.Debugf("userid:%d 已经在Cacher中了")
+		ctx.Logger.Debugf("userid:%d 已经在Cacher中了", userid)
 
 		urd, ok := v.(*UserRuntimeData)
 		if !ok {
