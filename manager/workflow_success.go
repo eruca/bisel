@@ -55,7 +55,7 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 		key := fmt.Sprintf("%s/%d", ctx.TableName(), ctx.Tabler.Model().ID)
 		if _, ok := ctx.Cacher.Get(key); ok {
 			err = btypes.ErrTableIsOnEditting
-			ctx.Logger.Errorf("%s 已经在编辑中, 发送错误给客户端:%v", key, err)
+			ctx.Logger.Errorf("%s 已经在编辑中, 发送错误给客户端:%v\n", key, err)
 			break
 		} else {
 			ctx.Logger.Debugf("在Cacher中Set:%s", key)
@@ -76,7 +76,7 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 		}
 		if urd.TableName != "" || urd.TableID > 0 {
 			err = btypes.ErrTableIsOnEditting
-			ctx.Logger.Errorf("目前userid:%d 存在编辑信息: %s/%d, 错误信息:%v", userid, urd.TableName, urd.TableID, err)
+			ctx.Logger.Errorf("目前userid:%d 存在编辑信息: %s/%d, 错误信息:%v\n", userid, urd.TableName, urd.TableID, err)
 			break
 		}
 		urd.TableName = ctx.TableName()
@@ -87,7 +87,7 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 		key := fmt.Sprintf("%s/%d", ctx.TableName(), ctx.Tabler.Model().ID)
 		if _, ok := ctx.Cacher.Get(key); !ok {
 			err = btypes.ErrTableIsOffEditting
-			ctx.Logger.Errorf("%s 不在Cacher中, 发送错误:%v", key, err)
+			ctx.Logger.Errorf("%s 不在Cacher中, 发送错误:%v\n", key, err)
 			break
 		} else {
 			ctx.Logger.Debugf("在Cacher中Remove: %s", key)
@@ -96,7 +96,7 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 
 		v, ok := ctx.Cacher.Get(userid)
 		if !ok {
-			ctx.Logger.Errorf("userid:%d 不在Cache内", userid)
+			ctx.Logger.Errorf("userid:%d 不在Cache内\n", userid)
 			panic("用户不在Cache内")
 		}
 		ctx.Logger.Debugf("userid:%d 已经在Cacher中了", userid)
@@ -108,7 +108,7 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 		}
 		if urd.TableName == "" || urd.TableID == 0 {
 			err = btypes.ErrTableIsOffEditting
-			ctx.Logger.Errorf("目前userid:%d 不存在编辑信息，错误信息:%v", userid, err)
+			ctx.Logger.Errorf("目前userid:%d 不存在编辑信息，错误信息:%v\n", userid, err)
 			break
 		}
 		ctx.Logger.Debugf("目前userid:%d 清除原来编辑信息: %s/%d", userid, urd.TableName, urd.TableID)
