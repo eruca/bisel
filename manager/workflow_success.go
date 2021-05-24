@@ -50,6 +50,7 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 			panic("logout 失败")
 		}
 		ctx.Logger.Debugf("userid:%d 退出成功", userid)
+
 	case btypes.ParamEditOn:
 		key := fmt.Sprintf("%s/%d", ctx.TableName(), ctx.Tabler.Model().ID)
 		if _, ok := ctx.Cacher.Get(key); ok {
@@ -61,17 +62,16 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 			ctx.Cacher.Set(key, struct{}{})
 		}
 
-		loginer_id := ctx.JwtSession.UserID()
-		v, ok := ctx.Cacher.Get(loginer_id)
+		v, ok := ctx.Cacher.Get(userid)
 		if !ok {
-			ctx.Logger.Errorf("userid:%d 不在Cacher内", loginer_id)
+			ctx.Logger.Errorf("userid:%d 不在Cacher内", userid)
 			panic("用户不在Cache内")
 		}
-		ctx.Logger.Debugf("userid:%d 已经在Cacher中了")
+		ctx.Logger.Debugf("userid:%d 已经在Cacher中了", userid)
 
 		urd, ok := v.(*UserRuntimeData)
 		if !ok {
-			ctx.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", ctx.TableName(), loginer_id)
+			ctx.Logger.Errorf("userid:%d 存储的不是*UserRuntimeData", userid)
 			panic("存储的数据不是*UserRuntimeData")
 		}
 		if urd.TableName != "" || urd.TableID > 0 {
@@ -94,17 +94,16 @@ func (manager *Manager) workflowSuccess(ctx *btypes.Context, paramType btypes.Pa
 			ctx.Cacher.Remove(key)
 		}
 
-		loginer_id := ctx.JwtSession.UserID()
-		v, ok := ctx.Cacher.Get(loginer_id)
+		v, ok := ctx.Cacher.Get(userid)
 		if !ok {
-			ctx.Logger.Errorf("%s:%d 不在Cache内", ctx.TableName(), loginer_id)
+			ctx.Logger.Errorf("userid:%d 不在Cache内", userid)
 			panic("用户不在Cache内")
 		}
 		ctx.Logger.Debugf("userid:%d 已经在Cacher中了")
 
 		urd, ok := v.(*UserRuntimeData)
 		if !ok {
-			ctx.Logger.Errorf("%s:%d存储的不是*UserRuntimeData", ctx.TableName(), loginer_id)
+			ctx.Logger.Errorf("userid:%d 存储的不是*UserRuntimeData", userid)
 			panic("存储的数据不是*UserRuntimeData")
 		}
 		if urd.TableName == "" || urd.TableID == 0 {
