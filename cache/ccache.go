@@ -63,10 +63,8 @@ func (c *Cache) Set(key, value interface{}) {
 func (c *Cache) Get(key interface{}) (interface{}, bool) {
 	v, err := c.Cache.Get(key)
 	if err != nil {
-		c.logger.Debugf("查找 key:%v 没有找到:%v", key, err)
 		return nil, false
 	}
-	c.logger.Debugf("查找 key:%v 成功", key)
 	return v, true
 }
 
