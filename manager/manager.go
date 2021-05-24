@@ -56,7 +56,7 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		return func(client *ws.Client, broadcast chan ws.BroadcastRequest, msg []byte) {
 			// 产生btypes.Request
 			req := btypes.NewRequest(bytes.TrimSpace(msg))
-			manager.logger.Infof("websocket request from client: %-v\n", req)
+			manager.logger.Infof("websocket request from client: %-v", req)
 			manager.TakeActionWebsocket(client, broadcast, req, httpReq)
 		}, manager.ClearUserID
 	}
