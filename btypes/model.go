@@ -45,7 +45,7 @@ func (model *GormModel) insert(db *DB, tabler Tabler) error {
 func (model *GormModel) update(db *DB, tabler Tabler, omits ...string) error {
 	model.Version++
 	tx := db.Gorm.Model(tabler).Where("version = ?", model.Version-1).
-		Omit("created_at", "deleted_at").Omit(omits...).Updates(tabler)
+		Omit("deleted_at").Omit(omits...).Updates(tabler)
 
 	if err := tx.Error; err != nil {
 		panic(err)
