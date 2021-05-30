@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/eruca/bisel/btypes"
 )
@@ -23,12 +24,19 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 
 	// write 权限
 	case btypes.ParamUpsert, btypes.ParamDelete:
+		var builder strings.Builder
+		builder.WriteString("clear cache: ")
+		builder.WriteString(c.TableName())
+
 		c.Cacher.ClearBuckets(c.TableName())
-		if beRelyon := c.Tabler.BeRelyOn(); len(beRelyon) > 0 {
+		beRelyon := c.Tabler.BeRelyOn()
+		if len(beRelyon) > 0 {
 			c.Cacher.ClearBuckets(beRelyon...)
+			builder.WriteByte(',')
+			builder.WriteString(strings.Join(beRelyon, ","))
 		}
 		c.Next()
-		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("clear cache:" + c.TableName())}
+		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString(builder.String())}
 
 	// Login 与 Logout
 	case btypes.ParamLogin:
