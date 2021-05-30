@@ -30,6 +30,9 @@ type Tabler interface {
 	FromRequest(json.RawMessage) Tabler
 
 	TableName() string
+	// 这个表格的修改会取消依赖其的缓存删除
+	BeRelyOn() []string
+
 	Model() *GormModel
 	MustAutoMigrate(*DB)
 	Register(map[string]ContextConfig)

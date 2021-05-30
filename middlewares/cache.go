@@ -24,6 +24,9 @@ func UseCache(c *btypes.Context) btypes.PairStringer {
 	// write 权限
 	case btypes.ParamUpsert, btypes.ParamDelete:
 		c.Cacher.ClearBuckets(c.TableName())
+		if beRelyon := c.Tabler.BeRelyOn(); len(beRelyon) > 0 {
+			c.Cacher.ClearBuckets(beRelyon...)
+		}
 		c.Next()
 		return btypes.PairStringer{Key: PairKeyCache, Value: btypes.ValueString("clear cache:" + c.TableName())}
 
