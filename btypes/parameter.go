@@ -10,9 +10,6 @@ import (
 	"strings"
 )
 
-// 默认的查询的大小
-const DEFAULT_QUERY_SIZE = 20
-
 // ParamType 代表参数类型，作为辨别CRUD操作
 type ParamType uint8
 

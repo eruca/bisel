@@ -71,7 +71,6 @@ func (jwt *JWTConfig) SetDefault() {
 type AppConfig struct {
 	DatabaseHost string
 	Addr         string
-	QuerySize    int
 }
 
 func (app *AppConfig) SetDefault() {
@@ -81,10 +80,6 @@ func (app *AppConfig) SetDefault() {
 
 	if app.Addr == "" {
 		app.Addr = "9000"
-	}
-
-	if app.QuerySize == 0 {
-		app.QuerySize = DEFAULT_QUERY_SIZE
 	}
 }
 
