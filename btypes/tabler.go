@@ -79,8 +79,8 @@ type Connectter interface {
 }
 
 func PushWithDefaultParameter(db *DB, cacher Cacher, cft ConfigResponseType, logger Logger,
-	tabler Tabler, action string, fullSize bool) Responder {
-	pc := ParamsContextForConnectter(fullSize)
+	tabler Tabler, action string, size int) Responder {
+	pc := ParamsContextForConnectter(size)
 
 	// key是按照查询参数MD5计算出俩的hash值
 	request_type := tabler.TableName() + "/" + action

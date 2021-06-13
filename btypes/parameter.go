@@ -58,13 +58,13 @@ type ParamsContext struct {
 	Tabler
 }
 
-func ParamsContextForConnectter(fullSize bool) ParamsContext {
+func ParamsContextForConnectter(size int) ParamsContext {
 	qp := &QueryParams{}
-	qp.init(fullSize)
+	qp.init(size)
 	return ParamsContext{ParamType: ParamQuery, QueryParams: qp}
 }
 
-func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) (pc ParamsContext) {
+func ParamsContextFromJSON(tabler Tabler, size int, pt ParamType, rw json.RawMessage) (pc ParamsContext) {
 	switch pt {
 	case ParamQuery:
 		pc.ParamType = pt
@@ -92,14 +92,14 @@ func ParamsContextFromJSON(tabler Tabler, pt ParamType, rw json.RawMessage) (pc 
 		panic("never happened")
 	}
 
-	pc.init()
+	pc.init(size)
 	return pc
 }
 
-func (pc *ParamsContext) init() {
+func (pc *ParamsContext) init(size int) {
 	switch pc.ParamType {
 	case ParamQuery:
-		pc.QueryParams.init(false)
+		pc.QueryParams.init(size)
 	}
 }
 
@@ -165,17 +165,13 @@ func (qp *QueryParams) Type() ParamType {
 }
 
 // Init 中的list目的是获取外部指针，接收内部产生的数据作为返回
-func (qp *QueryParams) init(fullSize bool) {
+func (qp *QueryParams) init(size int) {
 	if qp.Conds != nil {
 		sort.Strings(qp.Conds)
 	}
 
-	if fullSize {
-		qp.Size = -1
-	} else {
-		if qp.Size == 0 {
-			qp.Size = DEFAULT_QUERY_SIZE
-		}
+	if qp.Size == 0 {
+		qp.Size = int64(size)
 	}
 
 	if qp.Orderby == "" {
