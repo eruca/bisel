@@ -55,13 +55,13 @@ type ParamsContext struct {
 	Tabler
 }
 
-func ParamsContextForConnectter(size int) ParamsContext {
+func ParamsContextForConnectter(size int, orderby string) ParamsContext {
 	qp := &QueryParams{}
-	qp.init(size)
+	qp.init(size, orderby)
 	return ParamsContext{ParamType: ParamQuery, QueryParams: qp}
 }
 
-func ParamsContextFromJSON(tabler Tabler, size int, pt ParamType, rw json.RawMessage) (pc ParamsContext) {
+func ParamsContextFromJSON(tabler Tabler, size int, orderby string, pt ParamType, rw json.RawMessage) (pc ParamsContext) {
 	switch pt {
 	case ParamQuery:
 		pc.ParamType = pt
@@ -89,14 +89,14 @@ func ParamsContextFromJSON(tabler Tabler, size int, pt ParamType, rw json.RawMes
 		panic("never happened")
 	}
 
-	pc.init(size)
+	pc.init(size, orderby)
 	return pc
 }
 
-func (pc *ParamsContext) init(size int) {
+func (pc *ParamsContext) init(size int, orderby string) {
 	switch pc.ParamType {
 	case ParamQuery:
-		pc.QueryParams.init(size)
+		pc.QueryParams.init(size, orderby)
 	}
 }
 
@@ -162,7 +162,7 @@ func (qp *QueryParams) Type() ParamType {
 }
 
 // Init 中的list目的是获取外部指针，接收内部产生的数据作为返回
-func (qp *QueryParams) init(size int) {
+func (qp *QueryParams) init(size int, orderby string) {
 	if qp.Conds != nil {
 		sort.Strings(qp.Conds)
 	}
@@ -172,7 +172,11 @@ func (qp *QueryParams) init(size int) {
 	}
 
 	if qp.Orderby == "" {
-		qp.Orderby = "updated_at desc"
+		if orderby != "" {
+			qp.Orderby = orderby
+		} else {
+			qp.Orderby = "updated_at desc"
+		}
 	}
 }
 
