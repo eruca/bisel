@@ -163,10 +163,6 @@ func (qp *QueryParams) Type() ParamType {
 
 // Init 中的list目的是获取外部指针，接收内部产生的数据作为返回
 func (qp *QueryParams) init(size int, orderby string) {
-	if qp.Conds != nil {
-		sort.Strings(qp.Conds)
-	}
-
 	if qp.Size == 0 {
 		qp.Size = int64(size)
 	}
