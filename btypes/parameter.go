@@ -190,8 +190,11 @@ func (qp *QueryParams) BuildCacheKey(reqType string) string {
 	wr.WriteString(reqType)
 
 	if len(qp.Conds) > 0 {
-		sort.Strings(qp.Conds)
-		wr.WriteString(strings.Join(qp.Conds, ""))
+		conds := make([]string, len(qp.Conds))
+		copy(conds, qp.Conds)
+
+		sort.Strings(conds)
+		wr.WriteString(strings.Join(conds, ""))
 	}
 
 	buf := make([]byte, binary.MaxVarintLen64)
