@@ -47,6 +47,10 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		manager.TakeActionHttp(c.Writer, req, c.Request)
 	})
 
+	engine.GET("/size", func(c *gin.Context) {
+		c.JSON(200, manager.cacher.Size())
+	})
+
 	// 构建读入信息后的处理函数
 	processMixHttpRequest := func(httpReq *http.Request) (ws.Process, ws.ClearUserID) {
 		// 进入该函数，表示一条websocket连接

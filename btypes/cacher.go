@@ -10,4 +10,5 @@ type Cacher interface {
 	GetBucket(string, string) []byte
 	SetBucket(string, string, []byte)
 	ClearBuckets(...string)
+	Size() string
 }

@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/bluele/gcache"
@@ -27,6 +28,10 @@ func New(logger btypes.Logger) *Cache {
 		gcache.New(cacheSize).ARC().Expiration(expire).Build(),
 		logger,
 	}
+}
+
+func (c *Cache) Size() string {
+	return fmt.Sprintf("%d + %d", c.Cache.Len(false), c.LayeredCache.ItemCount())
 }
 
 func (c *Cache) SetBucket(tableName, hashKey string, value []byte) {
