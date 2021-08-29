@@ -5,7 +5,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/eruca/bisel/btypes"
+	"github.com/eruca/bisel/logger"
 )
 
 // ProcessMixHttpRequest 混入*http.Request
@@ -31,7 +31,7 @@ type Connected func(send chan<- []byte)
 // 比如连接成功后，客户端发送一个init状态，然后response需要初始化的数据
 // WriteClient 直接往broadcast里发送东西，那么会从ReadProcess里读出结果
 // 主要是作为websocket发起者时
-func WebsocketHandler(process ProcessMixHttpRequest, connected Connected, logger btypes.Logger) http.HandlerFunc {
+func WebsocketHandler(process ProcessMixHttpRequest, connected Connected, logger logger.Logger) http.HandlerFunc {
 	var hub = newHub()
 
 	// 获取广播接口

@@ -1,99 +1,93 @@
 package btypes
 
 import (
+	"fmt"
 	"net/http"
-	"sync"
+	"strings"
+
+	"github.com/eruca/bisel/logger"
+	"github.com/eruca/bisel/ws"
 )
 
-// contextPool 减少Context分配的次数，增加性能
-var contextPool sync.Pool = sync.Pool{
-	New: func() interface{} {
-		return &Context{}
-	},
-}
-
-type Injected struct {
-	*DB
-	Cacher
-	// Logger 日志
-	Logger
-	JWTConfig
-	// 定制应答类型输出
-	ConfigResponseType
+type Executor struct {
+	actions []Action
+	cursor  int
+	Results []PairStringer
 }
 
 type Context struct {
 	// 连接类型
 	ConnectionType
-
-	// 框架填充的数据
-	// *DB
-	// Cacher
-	Injected
-
-	// 该Tabler 代表需要操作的数据表，比如{journals}/query
-	Tabler
-
-	//! todo 登录人员的权限
-	JwtSession Defaulter
-
-	Executor struct {
-		actions []Action
-		cursor  int
-	}
-	// 所有中间件的结果
-	Results []PairStringer
-
-	// 这个是http.Request, 是websocket连接的状态
-	HttpReq *http.Request
-	// *Request 是这条请求信息的Request
-	*Request
-	Parameters *ParamsContext
-
-	// 应答包括成功与失败，因为都要返回给客户端
-	Success bool // 是应答成功，还是发生错误，
-	Responder
-
-	// 定制应答类型输出
-	// ConfigResponseType
-
+	// 数据库
+	*DB
+	// 缓存
+	Cacher
+	// Cache depends, readonly in execute
+	Depends map[string]map[string]struct{}
+	// 开启悲观锁的表
+	PessimisticLock map[string]struct{}
+	// 日志
+	logger.Logger
 	// JWT
-	// JWTConfig
+	JwtSess JwtSession
+	// Websocket Client
+	WsClient *ws.Client
+
+	Executor
+
+	// Tabler 代表调用方
+	Tabler
+	// ParamContext代表调用的参数
+	// ParamContext
+	Parameter
+
+	// 应答的设置
+	ConfigResponseType
+	// Websocket第一次http请求信息或http请求
+	HttpReq *http.Request
+	// Websocket或http来的信息，转化为Request
+	*Request
+	// Request的应答，是一个接口
+	Responder
+	// 此处应答是否成功
+	Success bool
 }
 
-func NewContext(db *DB, cacher Cacher, req *Request, httpReq *http.Request, cft ConfigResponseType,
-	logger Logger, jwtConfig JWTConfig, connType ConnectionType) *Context {
-	ctx := contextPool.Get().(*Context)
+func (ctx *Context) New(db *DB, cacher Cacher, client *ws.Client,
+	httpReq *http.Request, req *Request, depends map[string]map[string]struct{},
+	pess_lock map[string]struct{}, cft ConfigResponseType,
+	logger logger.Logger, connType ConnectionType) {
 
 	ctx.ConnectionType = connType
 	ctx.DB = db
 	ctx.Cacher = cacher
+	ctx.Depends = depends
+	ctx.PessimisticLock = pess_lock
 	ctx.Request = req
 	ctx.HttpReq = httpReq
+	ctx.WsClient = client
 	ctx.ConfigResponseType = cft
-	ctx.JWTConfig = jwtConfig
 	ctx.Logger = logger
 
 	// 初始化其他成员变量
 	ctx.Tabler = nil
-	ctx.Parameters = nil
+	ctx.Parameter = nil
 	ctx.Executor.actions = nil
 	ctx.Executor.cursor = 0
 	ctx.Results = nil
 	ctx.Success = false
 	ctx.Responder = nil
-	return ctx
 }
 
-func (c *Context) config(tabler Tabler, pc *ParamsContext, handlers ...Action) {
+func (c *Context) fill(tabler Tabler, parameter Parameter, handlers ...Action) {
 	c.Tabler = tabler
-	c.Parameters = pc
+	c.Parameter = parameter
 
-	c.Executor.actions = make([]Action, 0, len(handlers)+1)
 	c.Executor.cursor = 0
+	c.Executor.actions = make([]Action, 0, len(handlers)+1)
 	c.AddActions(handlers...)
 
-	c.Results = make([]PairStringer, 0, len(handlers)+1)
+	c.Executor.Results = make([]PairStringer, 0, len(handlers)+1)
 }
 
 func (c *Context) AddActions(actions ...Action) {
@@ -112,40 +106,29 @@ func (c *Context) exec() {
 	if c.Executor.cursor < len(c.Executor.actions) {
 		result := c.Executor.actions[c.Executor.cursor](c)
 		// 保存结果，对应handlers的位置
-		c.Results = append(c.Results, result)
+		c.Executor.Results = append(c.Executor.Results, result)
 	}
 }
 
-func (ctx *Context) Finish() {
-	ctx.logResults()
-
-	if ctx.Tabler != nil {
-		ctx.Tabler.Done()
-		ctx.Tabler = nil
+func (c *Context) BuildResponse(result Result, err error) (response *Response) {
+	if err != nil {
+		response = BuildErrorResposeFromRequest(c.ConfigResponseType, c.Request, err)
+	} else {
+		response = BuildFromRequest(c.ConfigResponseType, c.Request, true, result.Broadcast)
+		response.Add(result.Payloads...)
+		c.Success = true
 	}
-	if ctx.Request != nil {
-		ctx.Request.Done()
-		ctx.Request = nil
-	}
-	if ctx.Responder != nil {
-		ctx.Responder.Done()
-		ctx.Responder = nil
-	}
-	// 需要把ctx.Parameters设置为nil,否则该参数可能挂着Tabler,导致Tabler无法回收
-	ctx.Parameters = nil
-	ctx.HttpReq = nil
-
-	ctx.Done()
+	c.Responder = response
+	return
 }
 
-func (ctx *Context) Done() {
-	contextPool.Put(ctx)
-}
+func (c *Context) LogResults() {
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("'%d' 个handler结果:", len(c.Results)))
 
-func (c *Context) logResults() {
-	c.Logger.Infof("'%d'个handler结果:", len(c.Results))
 	for i := len(c.Results) - 1; i > 0; i-- {
-		c.Logger.Infof("\t\t%d: %s => %v", len(c.Results)-i, c.Results[i].Key, c.Results[i].Value)
+		builder.WriteString(fmt.Sprintf("\n\t\t%d: %s => %v", len(c.Results)-i, c.Results[i].Key, c.Results[i].Value))
 	}
-	c.Logger.Infof("\t\t%d: %s => %v\n", len(c.Results), c.Results[0].Key, c.Results[0].Value)
+	builder.WriteString(fmt.Sprintf("\n\t\t%d: %s => %v\n", len(c.Results), c.Results[0].Key, c.Results[0].Value))
+	c.Logger.Infof(builder.String())
 }

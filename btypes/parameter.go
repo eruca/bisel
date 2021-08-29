@@ -10,176 +10,147 @@ import (
 	"strings"
 )
 
+var _ Parameter = (*ParamContext)(nil)
+
+type RequestStatus uint8
+
+const (
+	// 对cache没有影响
+	StatusNoop RequestStatus = iota
+	// 读操作，会产生缓存
+	StatusRead
+	// 写操作，会清缓存
+	StatusWrite
+)
+
+type Parameter interface {
+	String() string
+	FromRawMessage(Tabler, json.RawMessage)
+	JwtCheck() bool
+	Status() RequestStatus
+	ReadForceUpdate() bool
+	BuildCacheKey(string) string
+	Call(*Context, Tabler) (Result, error)
+}
+
 // ParamType 代表参数类型，作为辨别CRUD操作
 type ParamType uint8
 
 const (
 	ParamQuery ParamType = iota
-	ParamUpsert
+	ParamInsert
+	ParamUpdate
 	ParamDelete
-	ParamLogin
-	ParamLogout
-	ParamEditOn
-	ParamEditOff
 )
 
-func (p ParamType) String() string {
-	switch p {
+func (pt ParamType) String() string {
+	switch pt {
 	case ParamQuery:
-		return "ParamQuery"
-	case ParamUpsert:
-		return "ParamUpsert"
+		return "QUERY"
+	case ParamInsert:
+		return "INSERT"
+	case ParamUpdate:
+		return "UPDATE"
 	case ParamDelete:
-		return "ParamDelete"
-	case ParamLogin:
-		return "ParamLogin"
-	case ParamLogout:
-		return "ParamLogout"
-	case ParamEditOn:
-		return "ParamEditOn"
-	case ParamEditOff:
-		return "ParamEditOff"
+		return "DELETE"
 	}
-	return ""
+	panic("should not happened")
 }
 
-type ParamsContext struct {
+type ParamContext struct {
 	// Param的类型
 	ParamType
-	// Param具体的值，
-	// *QueryParams 保存查询时的参数
-	*QueryParams
-	// Tabler 保存Upsert/Delete的参数
-	// 因为这是按照这个对象增加/修改
-	// 或对象的id, version进行删除
+	// QueryParam
+	*QueryParam
 	Tabler
 }
 
-func ParamsContextForConnectter(size int, orderby string) ParamsContext {
-	qp := &QueryParams{}
-	qp.init(size, orderby)
-	return ParamsContext{ParamType: ParamQuery, QueryParams: qp}
-}
+func (pc *ParamContext) FromRawMessage(tabler Tabler, rm json.RawMessage) {
+	if len(rm) == 0 {
+		panic("should have something in json.RawMessage")
+	}
 
-func ParamsContextFromJSON(tabler Tabler, size int, orderby string, pt ParamType, rw json.RawMessage) (pc ParamsContext) {
-	switch pt {
+	switch pc.ParamType {
 	case ParamQuery:
-		pc.ParamType = pt
-		pc.QueryParams = &QueryParams{}
-
-		if rw != nil {
-			err := json.Unmarshal(rw, &pc.QueryParams)
-			if err != nil {
-				panic(err)
-			}
-		}
-	case ParamUpsert, ParamDelete, ParamLogin, ParamLogout, ParamEditOn, ParamEditOff:
-		pc.ParamType = pt
-		if rw == nil {
-			// todo: 如果发送的信息，没有信息体，是否需要panic
-			panic(fmt.Sprintf("%s is nil", pt))
-		}
-
-		pc.Tabler = tabler
-		err := json.Unmarshal(rw, pc.Tabler)
+		qp := &QueryParam{}
+		err := json.Unmarshal(rm, &qp)
 		if err != nil {
 			panic(err)
 		}
-	default:
-		panic("never happened")
-	}
-
-	pc.init(size, orderby)
-	return pc
-}
-
-func (pc *ParamsContext) init(size int, orderby string) {
-	switch pc.ParamType {
-	case ParamQuery:
-		pc.QueryParams.init(size, orderby)
-	}
-}
-
-func (pc *ParamsContext) Assemble(value fmt.Stringer) PairStringer {
-	switch pc.ParamType {
-	case ParamQuery:
-		return PairStringer{Key: "QUERY", Value: value}
-	case ParamUpsert:
-		return PairStringer{Key: "UPSERT", Value: value}
-	case ParamDelete:
-		return PairStringer{Key: "DELETE", Value: value}
-	case ParamLogin:
-		return PairStringer{Key: "LOGIN", Value: value}
-	case ParamLogout:
-		return PairStringer{Key: "LOGOUT", Value: value}
-	case ParamEditOn:
-		return PairStringer{Key: "EditOn", Value: value}
-	case ParamEditOff:
-		return PairStringer{Key: "EditOff", Value: value}
-	default:
-		panic("never happen")
-	}
-}
-
-// ParamsContext 针对不同的ParamType 采取相应的处理
-func (pc *ParamsContext) Do(injected Injected, tabler Tabler, jwtSession Defaulter) (Result, error) {
-	switch pc.ParamType {
-	case ParamQuery:
-		// 应为客户端传送过来的数据不会序列化为Tabler，所以使用注入tabler
-		return tabler.Query(injected.DB, pc, jwtSession)
-
-	case ParamUpsert:
-		// pc.Tabler代表从客户端过来序列化后的数据
-		return pc.Tabler.Upsert(injected.DB, pc, jwtSession)
-
-	case ParamDelete:
-		// 同ParamUpsert
-		return pc.Tabler.Delete(injected.DB, pc, jwtSession)
-
-	case ParamLogin:
-		loginTabler, ok := pc.Tabler.(LoginTabler)
-		if !ok {
-			panic(fmt.Sprintf("%s 没有实现 LoginTabler", pc.TableName()))
+		if qp.Orderby == "" {
+			qp.Orderby = tabler.Orderby()
 		}
-		return loginJWT(injected, loginTabler, jwtSession)
 
+		if qp.Size == 0 {
+			qp.Size = int64(tabler.Size())
+		}
+		pc.QueryParam = qp
+
+	case ParamInsert, ParamUpdate, ParamDelete:
+		err := json.Unmarshal(rm, tabler)
+		if err != nil {
+			panic(err)
+		}
+		pc.Tabler = tabler
+	}
+}
+
+func (pc *ParamContext) Status() RequestStatus {
+	switch pc.ParamType {
+	case ParamQuery:
+		return StatusRead
+	case ParamInsert, ParamUpdate, ParamDelete:
+		return StatusWrite
+	default:
+		panic("should not happened")
+	}
+}
+
+func (pc *ParamContext) BuildCacheKey(reqType string) string {
+	switch pc.ParamType {
+	case ParamInsert, ParamUpdate, ParamDelete:
+		return ""
+	case ParamQuery:
+		if pc.QueryParam == nil {
+			panic("should not be nil")
+		}
+		return pc.QueryParam.BuildCacheKey(reqType)
+	default:
+		panic("Should not happen")
+	}
+}
+
+func (*ParamContext) JwtCheck() bool { return true }
+
+func (pc *ParamContext) Call(c *Context, tabler Tabler) (Result, error) {
+	switch pc.ParamType {
+	case ParamQuery:
+		return tabler.Query(c, tabler, pc.QueryParam, c.JwtSess)
+	case ParamInsert:
+		return tabler.Insert(c, tabler, c.JwtSess)
+	case ParamUpdate:
+		return tabler.Update(c, tabler, c.JwtSess)
+	case ParamDelete:
+		return tabler.Delete(c, tabler, c.JwtSess)
 	default:
 		panic("should not happened")
 	}
 }
 
 //*********** Params for fetch data ********************************
-type QueryParams struct {
-	Conds          []string `json:"conds,omitempty"` // 限制条件
-	Offset         uint64   `json:"offset,omitempty"`
-	Size           int64    `json:"size,omitempty"`
-	Orderby        string   `json:"orderby,omitempty"`
-	ReforceUpdated bool     `json:"reforce_updated,omitempty"` // 强制刷新，查询数据库
-}
-
-func (qp *QueryParams) Type() ParamType {
-	return ParamQuery
-}
-
-// Init 中的list目的是获取外部指针，接收内部产生的数据作为返回
-func (qp *QueryParams) init(size int, orderby string) {
-	if qp.Size == 0 {
-		qp.Size = int64(size)
-	}
-
-	if qp.Orderby == "" {
-		if orderby != "" {
-			qp.Orderby = orderby
-		} else {
-			qp.Orderby = "updated_at desc"
-		}
-	}
+type QueryParam struct {
+	Conds   []string `json:"conds,omitempty"` // 限制条件
+	Offset  uint64   `json:"offset,omitempty"`
+	Size    int64    `json:"size,omitempty"`
+	Orderby string   `json:"orderby,omitempty"`
+	//! 需要客户端协调
+	ForceUpdated bool `json:"force_updated,omitempty"` // 强制刷新，查询数据库
 }
 
 // BuildCacheKey是按上面的结构体顺序输入，计算md5
 // 因为Hash是作为服务器返回给客户的数据，作为重复查询的话可以使用缓存的目的
 // todo: sort.Strings(qp.Conds) 提前到初始化时
-func (qp *QueryParams) BuildCacheKey(reqType string) string {
+func (qp *QueryParam) BuildCacheKey(reqType string) string {
 	hasher := md5.New()
 	wr := bufio.NewWriter(hasher)
 	// 查询的类型必须放进去，要不然不同的查询都是同一结果
@@ -213,4 +184,8 @@ func (qp *QueryParams) BuildCacheKey(reqType string) string {
 		panic(err)
 	}
 	return fmt.Sprintf("%X", hasher.Sum(nil))
+}
+
+func (pc *QueryParam) ReadForceUpdate() bool {
+	return pc.ForceUpdated
 }

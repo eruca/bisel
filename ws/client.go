@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/eruca/bisel/btypes"
+	"github.com/eruca/bisel/logger"
 	"github.com/gorilla/websocket"
 )
 
@@ -33,7 +33,7 @@ type Client struct {
 	Userid uint
 }
 
-func (c *Client) readPump(hub *Hub, fn Process, clear ClearUserID, logger btypes.Logger) {
+func (c *Client) readPump(hub *Hub, fn Process, clear ClearUserID, logger logger.Logger) {
 	defer func() {
 		logger.Infof("readPump client unregister conn close")
 		hub.unregister <- c
@@ -58,7 +58,7 @@ func (c *Client) readPump(hub *Hub, fn Process, clear ClearUserID, logger btypes
 	}
 }
 
-func (c *Client) writePump(logger btypes.Logger) {
+func (c *Client) writePump(logger logger.Logger) {
 	ticker := time.NewTicker(pingPeriod)
 
 	defer func() {

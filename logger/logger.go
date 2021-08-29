@@ -1,4 +1,4 @@
-package btypes
+package logger
 
 import (
 	"fmt"
@@ -27,19 +27,19 @@ const (
 	LogError
 )
 
-func convertToLogLevel(lvl string) LogLevel {
-	switch lvl {
-	case "debug":
-		return LogDebug
-	case "info":
-		return LogInfo
-	case "warn":
-		return LogWarn
-	case "error":
-		return LogError
-	}
-	panic("should not happened:'" + lvl + "'")
-}
+// func convertToLogLevel(lvl string) LogLevel {
+// 	switch lvl {
+// 	case "debug":
+// 		return LogDebug
+// 	case "info":
+// 		return LogInfo
+// 	case "warn":
+// 		return LogWarn
+// 	case "error":
+// 		return LogError
+// 	}
+// 	panic("should not happened:'" + lvl + "'")
+// }
 
 type Logger interface {
 	Debugf(string, ...interface{})
@@ -73,18 +73,18 @@ const (
 	errStrColor   = Red + "[error] " + Reset + Magenta + "%s\n" + Reset
 )
 
-func NewLogger(logTarget LogTarget, logConfig Logging) (targets MultiTargets) {
-	if logTarget&LogStderr == LogStderr {
-		targets = append(targets, &stderr{
-			target:   target{os.Stderr},
-			level:    convertToLogLevel(logConfig.StderrLevel),
-			colorful: logConfig.StderrColor,
-		})
-	}
+func NewLogger(logTarget LogTarget) (targets MultiTargets) {
+	// if logTarget&LogStderr == LogStderr {
+	targets = append(targets, &stderr{
+		target:   target{os.Stderr},
+		level:    LogDebug,
+		colorful: true,
+	})
+	// }
 
-	if logTarget&LogFile == LogFile {
-		targets = append(targets, NewFileLogger(logConfig.Filename, convertToLogLevel(logConfig.Level)))
-	}
+	// if logTarget&LogFile == LogFile {
+	// 	targets = append(targets, NewFileLogger(logConfig.Filename, convertToLogLevel(logConfig.Level)))
+	// }
 
 	return
 }
