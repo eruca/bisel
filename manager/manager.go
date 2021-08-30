@@ -64,8 +64,11 @@ func New(gdb *gorm.DB, cacher btypes.Cacher, logger logger.Logger, jwtAction bty
 		}
 	}
 
-	// 注册悲观锁的handler
 	if len(pessimistic) > 0 {
+		if pessimistic_router == "" {
+			panic("必须设置pessimistic_router, 才能使用悲观锁")
+		}
+		// 注册悲观锁的handler
 		handlers[pessimistic_router] = middlewares.PessimisticLockHandler(pessimistic, middlewares.TimeElapsed, jwtAction)
 	}
 
