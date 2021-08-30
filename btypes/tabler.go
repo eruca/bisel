@@ -18,7 +18,7 @@ type Tabler interface {
 	Done()
 	Register(map[string]ContextConfig)
 	// Depends 代表该表需要依赖其他表
-	// 所以如果依赖表发生该表，则该表就需要删除缓存
+	// 所以如果依赖表发生改变，则该表就需要删除缓存
 	Depends() []string
 
 	// 对于Gorm的配置
