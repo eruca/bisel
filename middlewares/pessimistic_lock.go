@@ -9,6 +9,8 @@ import (
 
 const pessimisticLockKey = "Pessimistic Lock"
 
+var _ btypes.Parameter = (*PessimisticLockParameter)(nil)
+
 type PessimisticLockParameter struct {
 	TableName         string `json:"table_name,omitempty"`
 	ID                int    `json:"id,omitempty"`
@@ -29,12 +31,7 @@ func (*PessimisticLockParameter) ReadForceUpdate() bool        { return false }
 func (*PessimisticLockParameter) BuildCacheKey(string) string  { return "" }
 func (*PessimisticLockParameter) JwtCheck() bool               { return true }
 
-// type WriteLockValueStore struct {
-// 	UserId     uint
-// 	RemoteAddr string
-// }
-
-// c.Tabler == noActualTable
+// c.Tabler == VirtualTable
 func (pl *PessimisticLockParameter) Call(c *btypes.Context, _ btypes.Tabler) (result btypes.Result, err error) {
 	// 如果Tabler已经设置为乐观锁，直接返回成功
 	if _, ok := pl.pessimisticTables[pl.TableName]; !ok {
@@ -69,14 +66,6 @@ func (pl *PessimisticLockParameter) Call(c *btypes.Context, _ btypes.Tabler) (re
 	return
 }
 
-type noActualTable struct {
-	btypes.GormModel
-}
-
-func (*noActualTable) New() btypes.Tabler                       { return &noActualTable{} }
-func (*noActualTable) TableName() string                        { return "" }
-func (*noActualTable) Register(map[string]btypes.ContextConfig) {}
-
 func PessimisticLockHandler(pess map[string]struct{}, actions ...btypes.Action) btypes.ContextConfig {
-	return btypes.HandlerFunc(&noActualTable{}, &PessimisticLockParameter{pessimisticTables: pess}, nil, actions...)
+	return btypes.HandlerFunc(&btypes.VirtualTable{}, &PessimisticLockParameter{pessimisticTables: pess}, nil, actions...)
 }
