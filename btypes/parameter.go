@@ -81,6 +81,8 @@ func (pc *ParamContext) FromRawMessage(tabler Tabler, rm json.RawMessage) {
 			qp.Orderby = tabler.Orderby()
 		}
 
+		// 如果客户端未设置size,就使用服务端tabler的该表的默认设置
+		// 如果size < 0, 则表示要求所有数据
 		if qp.Size == 0 {
 			qp.Size = int64(tabler.Size())
 		}
