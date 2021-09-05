@@ -4,6 +4,8 @@ import (
 	"github.com/eruca/bisel/logger"
 )
 
+var _ Tabler = (*VirtualTable)(nil)
+
 // ***********************************************************
 // Result 代表增删查修的结果
 // Payloads键值对是返回给客户端的数据
@@ -39,6 +41,15 @@ type Tabler interface {
 	Delete(*Context, Tabler, JwtSession) (Result, error)
 	Update(*Context, Tabler, JwtSession) (Result, error)
 }
+
+// VirtualTable 代表虚拟表
+type VirtualTable struct {
+	GormModel
+}
+
+func (*VirtualTable) New() Tabler                       { return &VirtualTable{} }
+func (*VirtualTable) TableName() string                 { return "" }
+func (*VirtualTable) Register(map[string]ContextConfig) {}
 
 type Connectter interface {
 	Push(*DB, Cacher, logger.Logger, ConfigResponseType) Responder
