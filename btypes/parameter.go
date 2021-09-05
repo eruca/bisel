@@ -73,7 +73,7 @@ func (pc *ParamContext) FromRawMessage(tabler Tabler, rm json.RawMessage) {
 	switch pc.ParamType {
 	case ParamQuery:
 		qp := &QueryParam{}
-		err := json.Unmarshal(rm, &qp)
+		err := json.Unmarshal(rm, qp)
 		if err != nil {
 			panic(err)
 		}
