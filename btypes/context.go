@@ -53,7 +53,7 @@ type Context struct {
 	Success bool
 }
 
-func (ctx *Context) New(db *DB, cacher Cacher, client *ws.Client,
+func (ctx *Context) Build(db *DB, cacher Cacher, client *ws.Client,
 	httpReq *http.Request, req *Request, depends map[string]map[string]struct{},
 	pess_lock map[string]struct{}, cft ConfigResponseType,
 	logger logger.Logger, connType ConnectionType) {

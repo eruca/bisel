@@ -148,7 +148,7 @@ func (manager *Manager) TakeActionWebsocket(client *ws.Client, broadcast chan ws
 	}
 
 	var ctx btypes.Context
-	ctx.New(manager.db, manager.cacher, client, httpReq, req,
+	ctx.Build(manager.db, manager.cacher, client, httpReq, req,
 		manager.depends, manager.pessimistic_locks,
 		manager.crt, manager.logger, btypes.WEBSOCKET)
 
@@ -195,7 +195,7 @@ func (manager *Manager) TakeActionHttp(clientWriter io.Writer, req *btypes.Reque
 	}
 
 	var ctx btypes.Context
-	ctx.New(manager.db, manager.cacher, nil, httpReq, req,
+	ctx.Build(manager.db, manager.cacher, nil, httpReq, req,
 		manager.depends, manager.pessimistic_locks,
 		manager.crt, manager.logger, btypes.HTTP)
 
