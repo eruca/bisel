@@ -20,11 +20,12 @@ type PessimisticLockParameter struct {
 }
 
 func (*PessimisticLockParameter) String() string { return pessimisticLockKey }
-func (pl *PessimisticLockParameter) FromRawMessage(_ btypes.Tabler, rm json.RawMessage) {
+func (pl *PessimisticLockParameter) FromRawMessage(_ btypes.Tabler, rm json.RawMessage) error {
 	err := json.Unmarshal(rm, pl)
 	if err != nil {
-		panic(err)
+		return err
 	}
+	return nil
 }
 func (*PessimisticLockParameter) Status() btypes.RequestStatus { return btypes.StatusNoop }
 func (*PessimisticLockParameter) ReadForceUpdate() bool        { return false }

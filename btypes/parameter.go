@@ -5,14 +5,16 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
 )
 
 var (
-	_ Parameter = (*QueryParameter)(nil)
-	_ Parameter = (*WriterParameter)(nil)
+	_          Parameter = (*QueryParameter)(nil)
+	_          Parameter = (*WriterParameter)(nil)
+	errNilData           = errors.New("there is nil data")
 )
 
 type RequestStatus uint8
@@ -28,7 +30,7 @@ const (
 
 type Parameter interface {
 	String() string
-	FromRawMessage(Tabler, json.RawMessage)
+	FromRawMessage(Tabler, json.RawMessage) error
 	JwtCheck() bool
 	Status() RequestStatus
 	ReadForceUpdate() bool
@@ -77,10 +79,15 @@ type QueryParam struct {
 func (qp *QueryParam) String() string        { return "Query" }
 func (qp *QueryParam) ReadForceUpdate() bool { return qp.ForceUpdated }
 func (qp *QueryParam) Status() RequestStatus { return StatusRead }
-func (qp *QueryParam) FromRawMessage(tabler Tabler, rm json.RawMessage) {
+func (qp *QueryParam) FromRawMessage(tabler Tabler, rm json.RawMessage) error {
+	if len(rm) == 0 {
+		// panic("should have something in json.RawMessage")
+		return errNilData
+	}
+
 	err := json.Unmarshal(rm, qp)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if qp.Orderby == "" {
 		qp.Orderby = tabler.Orderby()
@@ -91,6 +98,7 @@ func (qp *QueryParam) FromRawMessage(tabler Tabler, rm json.RawMessage) {
 	if qp.Size == 0 {
 		qp.Size = int64(tabler.Size())
 	}
+	return nil
 }
 
 // BuildCacheKey是按上面的结构体顺序输入，计算md5
@@ -138,15 +146,17 @@ type WriterParameter struct {
 	Tabler
 }
 
-func (wp *WriterParameter) FromRawMessage(tabler Tabler, rm json.RawMessage) {
+func (wp *WriterParameter) FromRawMessage(tabler Tabler, rm json.RawMessage) error {
 	if len(rm) == 0 {
-		panic("should have something in json.RawMessage")
+		// panic("should have something in json.RawMessage")
+		return errNilData
 	}
 	err := json.Unmarshal(rm, tabler)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	wp.Tabler = tabler
+	return nil
 }
 
 func (wp *WriterParameter) Status() RequestStatus       { return StatusWrite }

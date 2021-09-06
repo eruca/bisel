@@ -142,62 +142,78 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 func (manager *Manager) TakeActionWebsocket(client *ws.Client, broadcast chan ws.BroadcastRequest,
 	req *btypes.Request, httpReq *http.Request) (err error) {
 
-	if contextConfig, ok := manager.handlers[req.Type]; ok {
-		var ctx btypes.Context
-		ctx.New(manager.db, manager.cacher, client, httpReq, req,
-			manager.depends, manager.pessimistic_locks,
-			manager.crt, manager.logger, btypes.WEBSOCKET)
+	contextConfig, ok := manager.handlers[req.Type]
+	if !ok {
+		return fmt.Errorf("%q router not implemented yet", req.Type)
+	}
 
-		// 在这里会对paramContext进行初始化, 还没有开始走流程
-		contextConfig(&ctx)
+	var ctx btypes.Context
+	ctx.New(manager.db, manager.cacher, client, httpReq, req,
+		manager.depends, manager.pessimistic_locks,
+		manager.crt, manager.logger, btypes.WEBSOCKET)
 
-		ctx.Logger.Infof("Start Work flow")
+	// 在这里会对paramContext进行初始化, 还没有开始走流程
+	err = contextConfig(&ctx)
+	if err != nil {
+		ctx.Logger.Warnf("there was error unmarshal from data: %v", err)
+		return
+	}
 
-		// StartWorkFlow 会启动WorkFlow
-		// 并且会走完ctx.Executor,并且会生成一个Responder
-		// 走流程之前所有数据都已经准备好了
-		ctx.StartWorkFlow()
-		if ctx.Responder == nil {
-			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
+	ctx.Logger.Infof("Start Work flow")
+
+	// StartWorkFlow 会启动WorkFlow
+	// 并且会走完ctx.Executor,并且会生成一个Responder
+	// 走流程之前所有数据都已经准备好了
+	ctx.StartWorkFlow()
+	if ctx.Responder == nil {
+		panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
+	}
+
+	client.Send <- ctx.Responder.JSON()
+
+	if ctx.Responder.Broadcast() {
+		ctx.Responder.RemoveUUID()
+		ctx.Responder.Silence()
+		broadcast <- ws.BroadcastRequest{
+			Data:     ctx.Responder.JSON(),
+			Producer: client.Send,
 		}
-
-		client.Send <- ctx.Responder.JSON()
-
-		if ctx.Responder.Broadcast() {
-			ctx.Responder.RemoveUUID()
-			ctx.Responder.Silence()
-			broadcast <- ws.BroadcastRequest{
-				Data:     ctx.Responder.JSON(),
-				Producer: client.Send,
-			}
-		}
-		// 打印调用顺序及结果
-		ctx.LogResults()
+	}
+	// 打印调用顺序及结果
+	ctx.LogResults()
 	return
 }
 
 // TakeAction 可以并发执行
 //! Notice: 因为写入都是在初始化阶段，读取可以并发
-func (manager *Manager) TakeActionHttp(clientWriter io.Writer, req *btypes.Request, httpReq *http.Request) (err error) {
+func (manager *Manager) TakeActionHttp(clientWriter io.Writer, req *btypes.Request,
+	httpReq *http.Request) (err error) {
 
-	if contextConfig, ok := manager.handlers[req.Type]; ok {
-		var ctx btypes.Context
-		ctx.New(manager.db, manager.cacher, nil, httpReq, req,
-			manager.depends, manager.pessimistic_locks,
-			manager.crt, manager.logger, btypes.HTTP)
+	contextConfig, ok := manager.handlers[req.Type]
+	if ok {
+		return fmt.Errorf("%q router not implemented yet", req.Type)
+	}
 
-		// 在这里会对paramContext进行初始化, 还没有开始走流程
-		contextConfig(&ctx)
+	var ctx btypes.Context
+	ctx.New(manager.db, manager.cacher, nil, httpReq, req,
+		manager.depends, manager.pessimistic_locks,
+		manager.crt, manager.logger, btypes.HTTP)
 
-		// StartWorkFlow 会启动WorkFlow
-		// 并且会走完ctx.Executor,并且会生成一个Responder
-		// 走流程之前所有数据都已经准备好了
-		ctx.StartWorkFlow()
-		if ctx.Responder == nil {
-			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
-		}
+	// 在这里会对paramContext进行初始化, 还没有开始走流程
+	err = contextConfig(&ctx)
+	if err != nil {
+		return
+	}
+
+	// StartWorkFlow 会启动WorkFlow
+	// 并且会走完ctx.Executor,并且会生成一个Responder
+	// 走流程之前所有数据都已经准备好了
+	ctx.StartWorkFlow()
+	if ctx.Responder == nil {
+		panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
+	}
 	clientWriter.Write(ctx.Responder.JSON())
-		ctx.LogResults()
+	ctx.LogResults()
 	return
 }
 

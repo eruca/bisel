@@ -47,18 +47,19 @@ func (p ParamLogio) String() string {
 }
 
 type ParameterLogio struct {
-	ParamLogio
+	ParamLogio `json:"-"`
 	btypes.Tabler
 	salt   string
 	expire int
 }
 
-func (p *ParameterLogio) FromRawMessage(tabler btypes.Tabler, rm json.RawMessage) {
+func (p *ParameterLogio) FromRawMessage(tabler btypes.Tabler, rm json.RawMessage) error {
 	err := json.Unmarshal(rm, tabler)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	p.Tabler = tabler
+	return nil
 }
 
 func (*ParameterLogio) Status() btypes.RequestStatus { return btypes.StatusNoop }

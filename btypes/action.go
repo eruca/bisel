@@ -6,17 +6,20 @@ type Action func(c *Context) PairStringer
 
 // 对于Context进行配置
 // @return represent islogin
-type ContextConfig func(*Context)
+type ContextConfig func(*Context) error
 
 // ConfigAction 自己设置最后一个Action
 // type ConfigAction func(*Context, Tabler, ParamContext, JwtSession) (Result, string, error)
 
 // jwtSession: 目的是将jwt的需求构造成一个结构体，发送给客户端就可以里，这个Context也完成使命被回收了
 func HandlerFunc(tabler Tabler, parameter Parameter, jwtSession JwtSession, handlers ...Action) ContextConfig {
-	return func(c *Context) {
+	return func(c *Context) error {
 		tabler = tabler.New()
 
-		parameter.FromRawMessage(tabler, c.Request.Payload)
+		err := parameter.FromRawMessage(tabler, c.Request.Payload)
+		if err != nil {
+			return err
+		}
 		c.fill(tabler, parameter, handlers...)
 		if jwtSession != nil {
 			c.JwtSess = jwtSession
@@ -29,6 +32,7 @@ func HandlerFunc(tabler Tabler, parameter Parameter, jwtSession JwtSession, hand
 
 			return PairStringer{Key: ctx.Parameter.String(), Value: bytes.NewBuffer(response.JSON())}
 		})
+		return nil
 	}
 }
 
