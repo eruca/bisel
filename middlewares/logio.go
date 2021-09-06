@@ -112,7 +112,7 @@ func (p *ParameterLogio) Call(c *btypes.Context, tabler btypes.Tabler) (result b
 	return
 }
 
-// expire: 默认cache过期时间
+// expire: 默认jwt token过期时间
 // salt: jwt添加的salt
 func ConfigLoginHandler(expire int, salt string) func(btypes.Tabler, btypes.JwtSession, ...btypes.Action) btypes.ContextConfig {
 	return func(tabler btypes.Tabler, jwt btypes.JwtSession, actions ...btypes.Action) btypes.ContextConfig {
