@@ -21,10 +21,6 @@ const (
 	jwtKey = "JWT"
 )
 
-var (
-	ErrAccountNotExistOrPasswordNotCorrect = errors.New("账号不存在或密码错误")
-)
-
 type Loginer interface {
 	GetAccount() btypes.PairStringer
 	GetPassword() btypes.PairStringer
@@ -211,7 +207,7 @@ func LoginAssert(c *btypes.Context) (btypes.Tabler, error) {
 		Where(fmt.Sprintf("%s = ?", account.Key), account.Value).
 		First(tabler).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrAccountNotExistOrPasswordNotCorrect
+			return nil, btypes.ErrAccountNotExistOrPasswordNotCorrect
 		}
 		c.Logger.Errorf("登录时，查找账号发生错误: %s", err.Error())
 		panic("登录查询数据库错误")
@@ -222,7 +218,7 @@ func LoginAssert(c *btypes.Context) (btypes.Tabler, error) {
 	c.Logger.Infof("password from db: %s => %s", pswdFromDb, password.Value.String())
 	if err := bcrypt.CompareHashAndPassword([]byte(pswdFromDb), []byte(password.Value.String())); err != nil {
 		c.Logger.Warnf(err.Error())
-		return nil, ErrAccountNotExistOrPasswordNotCorrect
+		return nil, btypes.ErrAccountNotExistOrPasswordNotCorrect
 	}
 	// 如果jwtSession为空，直接返回
 	if c.JwtSess == nil {
