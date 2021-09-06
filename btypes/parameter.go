@@ -10,7 +10,10 @@ import (
 	"strings"
 )
 
-var _ Parameter = (*ParamContext)(nil)
+var (
+	_ Parameter = (*QueryParameter)(nil)
+	_ Parameter = (*WriterParameter)(nil)
+)
 
 type RequestStatus uint8
 
@@ -33,20 +36,17 @@ type Parameter interface {
 	Call(*Context, Tabler) (Result, error)
 }
 
-// ParamType 代表参数类型，作为辨别CRUD操作
+// ParamType 代表参数类型，作为辨别具体的写操作
 type ParamType uint8
 
 const (
-	ParamQuery ParamType = iota
-	ParamInsert
+	ParamInsert ParamType = iota
 	ParamUpdate
 	ParamDelete
 )
 
 func (pt ParamType) String() string {
 	switch pt {
-	case ParamQuery:
-		return "QUERY"
 	case ParamInsert:
 		return "INSERT"
 	case ParamUpdate:
@@ -57,96 +57,40 @@ func (pt ParamType) String() string {
 	panic("should not happened")
 }
 
-type ParamContext struct {
-	// Param的类型
-	ParamType
-	// QueryParam
-	*QueryParam
-	Tabler
-}
-
-func (pc *ParamContext) FromRawMessage(tabler Tabler, rm json.RawMessage) {
-	if len(rm) == 0 {
-		panic("should have something in json.RawMessage")
-	}
-
-	switch pc.ParamType {
-	case ParamQuery:
-		qp := &QueryParam{}
-		err := json.Unmarshal(rm, qp)
-		if err != nil {
-			panic(err)
-		}
-		if qp.Orderby == "" {
-			qp.Orderby = tabler.Orderby()
-		}
-
-		// 如果客户端未设置size,就使用服务端tabler的该表的默认设置
-		// 如果size < 0, 则表示要求所有数据
-		if qp.Size == 0 {
-			qp.Size = int64(tabler.Size())
-		}
-		pc.QueryParam = qp
-
-	case ParamInsert, ParamUpdate, ParamDelete:
-		err := json.Unmarshal(rm, tabler)
-		if err != nil {
-			panic(err)
-		}
-		pc.Tabler = tabler
-	}
-}
-
-func (pc *ParamContext) Status() RequestStatus {
-	switch pc.ParamType {
-	case ParamQuery:
-		return StatusRead
-	case ParamInsert, ParamUpdate, ParamDelete:
-		return StatusWrite
-	default:
-		panic("should not happened")
-	}
-}
-
-func (pc *ParamContext) BuildCacheKey(reqType string) string {
-	switch pc.ParamType {
-	case ParamInsert, ParamUpdate, ParamDelete:
-		return ""
-	case ParamQuery:
-		if pc.QueryParam == nil {
-			panic("should not be nil")
-		}
-		return pc.QueryParam.BuildCacheKey(reqType)
-	default:
-		panic("Should not happen")
-	}
-}
-
-func (*ParamContext) JwtCheck() bool { return true }
-
-func (pc *ParamContext) Call(c *Context, tabler Tabler) (Result, error) {
-	switch pc.ParamType {
-	case ParamQuery:
-		return tabler.Query(c, tabler, pc.QueryParam, c.JwtSess)
-	case ParamInsert:
-		return tabler.Insert(c, tabler, c.JwtSess)
-	case ParamUpdate:
-		return tabler.Update(c, tabler, c.JwtSess)
-	case ParamDelete:
-		return tabler.Delete(c, tabler, c.JwtSess)
-	default:
-		panic("should not happened")
-	}
-}
-
 //*********** Params for fetch data ********************************
+type QueryParameter struct {
+	CheckJWT bool `json:"-"`
+	QueryParam
+}
+
+func (qp *QueryParameter) JwtCheck() bool { return qp.CheckJWT }
+
 type QueryParam struct {
 	Conds   []string `json:"conds,omitempty"` // 限制条件
 	Offset  uint64   `json:"offset,omitempty"`
-	Size    int64    `json:"size,omitempty"`
+	Size    int64    `json:"size,omitempty"` // 负数代表所有数据
 	Orderby string   `json:"orderby,omitempty"`
 	//! 需要客户端协调
 	ForceUpdated bool `json:"force_updated,omitempty"` // 强制刷新，查询数据库
+}
+
+func (qp *QueryParam) String() string        { return "Query" }
+func (qp *QueryParam) ReadForceUpdate() bool { return qp.ForceUpdated }
+func (qp *QueryParam) Status() RequestStatus { return StatusRead }
+func (qp *QueryParam) FromRawMessage(tabler Tabler, rm json.RawMessage) {
+	err := json.Unmarshal(rm, qp)
+	if err != nil {
+		panic(err)
+	}
+	if qp.Orderby == "" {
+		qp.Orderby = tabler.Orderby()
+	}
+
+	// 如果客户端未设置size,就使用服务端tabler的该表的默认设置
+	// 如果size < 0, 则表示要求所有数据
+	if qp.Size == 0 {
+		qp.Size = int64(tabler.Size())
+	}
 }
 
 // BuildCacheKey是按上面的结构体顺序输入，计算md5
@@ -183,6 +127,42 @@ func (qp *QueryParam) BuildCacheKey(reqType string) string {
 	return fmt.Sprintf("%X", hasher.Sum(nil))
 }
 
-func (pc *QueryParam) ReadForceUpdate() bool {
-	return pc.ForceUpdated
+func (qp *QueryParam) Call(c *Context, tabler Tabler) (Result, error) {
+	return tabler.Query(c, tabler, qp, c.JwtSess)
+}
+
+// -------------------------WriterParam---------------------------------
+type WriterParameter struct {
+	ParamType `json:"-"`
+	CheckJWT  bool `json:"-"`
+	Tabler
+}
+
+func (wp *WriterParameter) FromRawMessage(tabler Tabler, rm json.RawMessage) {
+	if len(rm) == 0 {
+		panic("should have something in json.RawMessage")
+	}
+	err := json.Unmarshal(rm, tabler)
+	if err != nil {
+		panic(err)
+	}
+	wp.Tabler = tabler
+}
+
+func (wp *WriterParameter) Status() RequestStatus       { return StatusWrite }
+func (wp *WriterParameter) BuildCacheKey(string) string { panic("no build key") }
+func (wp *WriterParameter) JwtCheck() bool              { return wp.CheckJWT }
+func (wp *WriterParameter) ReadForceUpdate() bool       { return false }
+
+func (wp *WriterParameter) Call(c *Context, tabler Tabler) (Result, error) {
+	switch wp.ParamType {
+	case ParamInsert:
+		return tabler.Insert(c, tabler, c.JwtSess)
+	case ParamUpdate:
+		return tabler.Update(c, tabler, c.JwtSess)
+	case ParamDelete:
+		return tabler.Delete(c, tabler, c.JwtSess)
+	default:
+		panic("should not happened")
+	}
 }

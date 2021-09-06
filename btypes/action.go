@@ -32,18 +32,27 @@ func HandlerFunc(tabler Tabler, parameter Parameter, jwtSession JwtSession, hand
 	}
 }
 
-func QueryHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return HandlerFunc(tabler, &ParamContext{ParamType: ParamQuery}, nil, handlers...)
+func QueryHandler(tabler Tabler, checkJwt bool, handlers ...Action) ContextConfig {
+	return HandlerFunc(tabler, &QueryParameter{CheckJWT: checkJwt}, nil, handlers...)
 }
 
-func InsertHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return HandlerFunc(tabler, &ParamContext{ParamType: ParamInsert}, nil, handlers...)
+func InsertHandler(tabler Tabler, checkJwt bool, handlers ...Action) ContextConfig {
+	return HandlerFunc(tabler, &WriterParameter{
+		ParamType: ParamInsert,
+		CheckJWT:  checkJwt,
+	}, nil, handlers...)
 }
 
-func UpdateHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return HandlerFunc(tabler, &ParamContext{ParamType: ParamUpdate}, nil, handlers...)
+func UpdateHandler(tabler Tabler, checkJwt bool, handlers ...Action) ContextConfig {
+	return HandlerFunc(tabler, &WriterParameter{
+		ParamType: ParamUpdate,
+		CheckJWT:  checkJwt,
+	}, nil, handlers...)
 }
 
-func DeleteHandler(tabler Tabler, handlers ...Action) ContextConfig {
-	return HandlerFunc(tabler, &ParamContext{ParamType: ParamDelete}, nil, handlers...)
+func DeleteHandler(tabler Tabler, checkJwt bool, handlers ...Action) ContextConfig {
+	return HandlerFunc(tabler, &WriterParameter{
+		ParamType: ParamDelete,
+		CheckJWT:  checkJwt,
+	}, nil, handlers...)
 }
