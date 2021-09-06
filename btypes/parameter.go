@@ -166,18 +166,13 @@ func (qp *QueryParam) BuildCacheKey(reqType string) string {
 		wr.WriteString(strings.Join(conds, ""))
 	}
 
-	buf := make([]byte, binary.MaxVarintLen64)
-	binary.PutUvarint(buf, qp.Offset)
-	wr.Write(buf)
+	// 使用数组代替切片
+	buf := [binary.MaxVarintLen64]byte{}
+	n := binary.PutUvarint(buf[:], qp.Offset)
+	wr.Write(buf[:n])
 
-	// 不重复使用buf，重置buf
-	//? 假设len(buf) == 4, 如果第一个是4个长度，第二个是2个长度，就有问题
-	// buf = make([]byte, binary.MaxVarintLen64)
-	for i := 0; i < binary.MaxVarintLen64; i++ {
-		buf[i] = 0
-	}
-	binary.PutVarint(buf, qp.Size)
-	wr.Write(buf)
+	n = binary.PutVarint(buf[:], qp.Size)
+	wr.Write(buf[:n])
 
 	wr.WriteString(qp.Orderby)
 
