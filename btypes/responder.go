@@ -123,20 +123,14 @@ func (rr *RawResponse) JSON() []byte {
 	return data
 }
 
-func (rr *RawResponse) JSONPayload() []byte {
-	return rr.Payload
-}
-
-// Broadcast ...
-func (rr *RawResponse) Broadcast() bool { return false }
-
-func (resp *RawResponse) RemoveUUID() { resp.UUID = "" }
-
-func (resp *RawResponse) Silence() {
+func (rr *RawResponse) JSONPayload() []byte { return rr.Payload }
+func (rr *RawResponse) Broadcast() bool     { return false }
+func (rr *RawResponse) RemoveUUID()         { rr.UUID = "" }
+func (rr *RawResponse) Silence() {
 	var buf bytes.Buffer
 
 	buf.WriteByte('{')
 	buf.WriteString(`"silence":true,`)
-	buf.Write(resp.Payload[1:])
-	resp.Payload = buf.Bytes()
+	buf.Write(rr.Payload[1:])
+	rr.Payload = buf.Bytes()
 }
