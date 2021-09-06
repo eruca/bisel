@@ -99,7 +99,11 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 		req := btypes.FromHttpRequest(router, c.Request.Body)
 		manager.logger.Debugf("\nhttp request from client: %-v", req)
 
-		manager.TakeActionHttp(c.Writer, req, c.Request)
+		err := manager.TakeActionHttp(c.Writer, req, c.Request)
+		if err != nil {
+			resp := btypes.BuildErrorResposeFromRequest(manager.crt, req, err)
+			c.Writer.Write(resp.JSON())
+		}
 	})
 
 	// 构建读入信息后的处理函数
@@ -110,7 +114,12 @@ func (manager *Manager) InitSystem(engine *gin.Engine, afterConnected btypes.Con
 			manager.logger.Warnf("websocket request from client: %s", msg)
 			// 产生btypes.Request
 			req := btypes.FromJsonMessage(bytes.TrimSpace(msg))
-			manager.TakeActionWebsocket(client, broadcast, req, httpReq)
+			// 将下层的错误上传到这里
+			err := manager.TakeActionWebsocket(client, broadcast, req, httpReq)
+			if err != nil {
+				resp := btypes.BuildErrorResposeFromRequest(manager.crt, req, err)
+				client.Send <- resp.JSON()
+			}
 		}, manager.ClearUserID
 	}
 	// 连接成功后马上发送的数据
@@ -164,12 +173,6 @@ func (manager *Manager) TakeActionWebsocket(client *ws.Client, broadcast chan ws
 		}
 		// 打印调用顺序及结果
 		ctx.LogResults()
-	} else {
-		resp := btypes.BuildErrorResposeFromRequest(manager.crt, req,
-			fmt.Errorf("%q router not implemented yet", req.Type))
-		client.Send <- resp.JSON()
-	}
-
 	return
 }
 
@@ -193,19 +196,8 @@ func (manager *Manager) TakeActionHttp(clientWriter io.Writer, req *btypes.Reque
 		if ctx.Responder == nil {
 			panic("需要返回一个结果给客户端, 是否在某个middleware中，忘记调用c.Next()了")
 		}
-
-		respReader := btypes.ResponderToReader(ctx.Responder)
-		_, err = io.Copy(clientWriter, respReader)
-		if err != nil {
-			panic(err)
-		}
+	clientWriter.Write(ctx.Responder.JSON())
 		ctx.LogResults()
-	} else {
-		resp := btypes.BuildErrorResposeFromRequest(manager.crt, req, fmt.Errorf("%q router not implemented yet", req.Type))
-		respReader := btypes.ResponderToReader(resp)
-		_, err = io.Copy(clientWriter, respReader)
-	}
-
 	return
 }
 
