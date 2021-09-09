@@ -14,8 +14,12 @@ import (
 // ************************************ Pairs *********************************
 type Pairs []Pair
 
-func (ps *Pairs) Push(key string, value interface{}) {
+func (ps *Pairs) Add(key string, value interface{}) {
 	*ps = append(*ps, Pair{Key: key, Value: value})
+}
+
+func (ps *Pairs) Push(pair Pair) {
+	*ps = append(*ps, pair)
 }
 
 type Pair struct {

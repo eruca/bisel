@@ -44,7 +44,7 @@ func (pl *PessimisticLockParameter) Call(c *btypes.Context, _ btypes.Tabler) (re
 	userid, ok := c.Cacher.Get(key)
 	if !ok {
 		if pl.Lock {
-			result.Payloads.Push("msg", fmt.Sprintf("已获取%q写锁", key))
+			result.Payloads.Add("msg", fmt.Sprintf("已获取%q写锁", key))
 			c.Logger.Infof("%d: 获取%s", pl.UserID, key)
 
 			c.Cacher.Set(key, pl.UserID)
@@ -60,7 +60,7 @@ func (pl *PessimisticLockParameter) Call(c *btypes.Context, _ btypes.Tabler) (re
 		} else {
 			c.Cacher.Remove(key)
 			c.Cacher.Remove(userid)
-			result.Payloads.Push("msg", fmt.Sprintf("删除%q写锁", key))
+			result.Payloads.Add("msg", fmt.Sprintf("删除%q写锁", key))
 			c.Logger.Infof("%d: 删除%q", pl.UserID, key)
 		}
 	}

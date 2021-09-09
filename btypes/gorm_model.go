@@ -74,7 +74,7 @@ func (model *GormModel) Model() *GormModel { return model }
 // insert 插入新数据时有可能会违反独一约束，则需要处理该类错误，需在tabler内部处理
 func (*GormModel) Insert(c *Context, tabler Tabler, jwtSess JwtSession) (result Result, err error) {
 	if err = c.DB.Gorm.Create(tabler).Error; err == nil {
-		result.Payloads.Push("msg", "添加成功")
+		result.Payloads.Add("msg", "添加成功")
 		return
 	}
 
@@ -99,7 +99,7 @@ func (model *GormModel) Delete(c *Context, tabler Tabler, jwtSession JwtSession)
 	var n int64
 	n, err = tabler.Model().SoftDelete(c.DB, tabler)
 	if err == nil {
-		result.Payloads.Push("msg", fmt.Sprintf("成功删除[%d]", n))
+		result.Payloads.Add("msg", fmt.Sprintf("成功删除[%d]", n))
 	}
 	return
 }
@@ -109,8 +109,8 @@ func (*GormModel) Update(c *Context, tabler Tabler, jwtSess JwtSession) (result 
 	if err != nil {
 		return
 	}
-	result.Payloads.Push("msg", "修改成功")
-	result.Payloads.Push("tabler", tabler)
+	result.Payloads.Add("msg", "修改成功")
+	result.Payloads.Add("tabler", tabler)
 	return
 }
 
@@ -141,7 +141,7 @@ func (*GormModel) Query(c *Context, tabler Tabler, query *QueryParam,
 	var total int64
 	QueryAssist(c.DB.Gorm, tabler, query, &total, ptr.Interface(), tabler.QueryOmits()...)
 
-	result.Payloads.Push("total", total)
-	result.Payloads.Push("list", ptr.Interface())
+	result.Payloads.Add("total", total)
+	result.Payloads.Add("list", ptr.Interface())
 	return
 }

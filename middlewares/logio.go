@@ -101,7 +101,7 @@ func (p *ParameterLogio) Call(c *btypes.Context, tabler btypes.Tabler) (result b
 			result.Payloads = pairs
 		}
 	case ParamLogout:
-		result.Payloads.Push("msg", "logout success")
+		result.Payloads.Add("msg", "logout success")
 	default:
 		panic("should not happened")
 	}
