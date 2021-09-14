@@ -32,7 +32,7 @@ func (*GormModel) Orderby() string       { return "updated_at DESC" }
 func (model *GormModel) UpdateWithOmits(db *DB, tabler Tabler, omits ...string) error {
 	model.Version++
 	tx := db.Gorm.Model(tabler).Where("version = ?", model.Version-1).
-		Omit("deleted_at").Omit(omits...).Updates(tabler)
+		Omit("deleted_at").Omit(omits...).Save(tabler)
 
 	if err := tx.Error; err != nil {
 		panic(err)
