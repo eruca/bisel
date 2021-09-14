@@ -79,7 +79,8 @@ func (p *ParameterLogio) JwtCheck() bool {
 func (p *ParameterLogio) Call(c *btypes.Context, tabler btypes.Tabler) (result btypes.Result, err error) {
 	switch p.ParamLogio {
 	case ParamLogin:
-		loginer, err := LoginAssert(c)
+		var loginer btypes.Tabler
+		loginer, err = LoginAssert(c)
 		if err == nil {
 			token, err := Generate_jwt(c.JwtSess, p.expire, []byte(p.salt))
 			if err != nil {
