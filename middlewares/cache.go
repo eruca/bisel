@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	PairKeyCache = "Use Cache"
+	PairKeyCache = "Flow @Cache"
 )
 
 func UseCache(c *btypes.Context) btypes.PairStringer {

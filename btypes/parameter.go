@@ -50,11 +50,11 @@ const (
 func (pt ParamType) String() string {
 	switch pt {
 	case ParamInsert:
-		return "INSERT"
+		return "Flow @INSERT"
 	case ParamUpdate:
-		return "UPDATE"
+		return "Flow @UPDATE"
 	case ParamDelete:
-		return "DELETE"
+		return "Flow @DELETE"
 	}
 	panic("should not happened")
 }
@@ -76,7 +76,7 @@ type QueryParam struct {
 	ForceUpdated bool `json:"force_updated,omitempty"` // 强制刷新，查询数据库
 }
 
-func (qp *QueryParam) String() string        { return "Query" }
+func (qp *QueryParam) String() string        { return "Flow @Query" }
 func (qp *QueryParam) ReadForceUpdate() bool { return qp.ForceUpdated }
 func (qp *QueryParam) Status() RequestStatus { return StatusRead }
 func (qp *QueryParam) FromRawMessage(tabler Tabler, rm json.RawMessage) error {

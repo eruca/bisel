@@ -38,9 +38,9 @@ const (
 func (p ParamLogio) String() string {
 	switch p {
 	case ParamLogin:
-		return "Param Login"
+		return "Flow @Param Login"
 	case ParamLogout:
-		return "Param Logout"
+		return "Flow @Param Logout"
 	default:
 		panic("should not happened")
 	}

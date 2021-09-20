@@ -11,5 +11,5 @@ func TimeElapsed(c *btypes.Context) btypes.PairStringer {
 	c.Next()
 	duration := time.Since(now)
 
-	return btypes.PairStringer{Key: "Time Elapsed", Value: duration}
+	return btypes.PairStringer{Key: "Flow @Time Elapsed", Value: duration}
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/eruca/bisel/btypes"
 )
 
-const pessimisticLockKey = "Pessimistic Lock"
+const pessimisticLockKey = "Flow @Pessimistic Lock"
 
 var _ btypes.Parameter = (*PessimisticLockParameter)(nil)
 
