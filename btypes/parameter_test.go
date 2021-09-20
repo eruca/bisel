@@ -57,7 +57,7 @@ func TestQueryParameter(t *testing.T) {
 	assert.Equal(t, query.Size, int64(20))
 	assert.Equal(t, query.Orderby, "updated_at DESC")
 	assert.Equal(t, query.ForceUpdated, false)
-	assert.Equal(t, query.String(), "Query")
+	assert.Equal(t, query.String(), "Flow @Query")
 	assert.Equal(t, query.Status(), btypes.StatusRead)
 }
 
